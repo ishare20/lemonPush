@@ -3,8 +3,8 @@
 一个基于局域网内Android手机简单快捷发送剪切板内容到Windows电脑剪切板的项目，项目包括Android和Windows软件
 
 ## 下载地址
-- [Windows](https://gitee.com/ishare20/msglistener/attach_files/1052158/download/pushToPCServer.exe)
-- [Android](https://gitee.com/ishare20/msglistener/attach_files/1052159/download/push-v1.0-app-release.apk) 
+- [Windows 7.5K](https://gitee.com/ishare20/msglistener/attach_files/1052158/download/pushToPCServer.exe)
+- [Android 1.78M](https://gitee.com/ishare20/msglistener/attach_files/1052159/download/push-v1.0-app-release.apk) 
 
 ## 配置教程
 电脑双击启动pushToPC程序后显示电脑的IP，手机安装Push App后，点击设置电脑IP，填写电脑IP点击发送剪切版即可将
