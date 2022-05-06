@@ -269,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
             });
             builder.create().show();
         }else if (item.getItemId() == R.id.guide){
-            openUrl("");
+            openUrl("https://gitee.com/ishare20/pushToPC");
         }else if (item.getItemId() == R.id.scan){
             if (!NetworkUtil.isWifiConnected(this)) {
                 Toast.makeText(this, "请打开WIFI连接局域网", Toast.LENGTH_LONG).show();
@@ -310,9 +310,7 @@ public class MainActivity extends AppCompatActivity {
     private void openUrl(String url) {
         Uri webpage = Uri.parse(url);
         Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivity(intent);
-        }
+        startActivity(intent);
     }
 
 
