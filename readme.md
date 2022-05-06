@@ -1,6 +1,6 @@
 # Push To PC
 ## 介绍
-一个基于局域网内Android手机简单快捷发送剪切板内容到Windows电脑剪切板的项目，项目包括Android和Windows软件
+基于局域网内Android手机简单快捷发送剪切板内容到Windows电脑剪切板的项目，项目包括Android和Windows软件
 
 ## 下载地址
 - [Windows (7.5K)](https://gitee.com/ishare20/msglistener/attach_files/1052158/download/pushToPCServer.exe)
