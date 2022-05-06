@@ -4,7 +4,7 @@
 
 ## 下载地址
 - [Windows (7.5K)](https://gitee.com/ishare20/msglistener/attach_files/1052158/download/pushToPCServer.exe)
-- [Android (1.78M)](https://gitee.com/ishare20/msglistener/attach_files/1052159/download/push-v1.0-app-release.apk) 
+- [Android (1.78M)](https://gitee.com/ishare20/pushToPC/attach_files/1052278/download/push-v1.0-app-release.apk) 
 
 ## 配置教程
 电脑双击启动pushToPCServer程序后会显示电脑的IP，手机安装Push App后，点击设置电脑IP，填写电脑IP后点击发送剪切板即可将
