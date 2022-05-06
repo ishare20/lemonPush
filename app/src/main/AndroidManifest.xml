@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:dist="http://schemas.android.com/apk/distribution"
     xmlns:tools="http://schemas.android.com/tools"
-    package="ishare20.net.msglistener">
+    package="net.lemontree.push">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <application
         android:allowBackup="true"
@@ -13,7 +16,8 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".MainActivity">
+            android:name="net.lemontree.push.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -35,12 +39,6 @@
 
     </application>
 
-    <dist:module dist:instant="true" />
 
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"></uses-permission>
+
 </manifest>

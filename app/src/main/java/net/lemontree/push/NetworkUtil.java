@@ -1,4 +1,4 @@
-package ishare20.net.msglistener;
+package net.lemontree.push;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

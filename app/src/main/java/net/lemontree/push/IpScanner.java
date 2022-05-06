@@ -1,29 +1,28 @@
-package ishare20.net.msglistener;
+package net.lemontree.push;
 
 import android.os.SystemClock;
-import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * @author David Chen
+ * @mail dingwei.chen1988@gmail.com
+ * */
 public class IpScanner extends Thread {
 
 	private int mPort = -1;
@@ -64,23 +63,23 @@ public class IpScanner extends Thread {
 		this.mCommandStr = command;
 		return this;
 	}
-	
+
 	public static interface ScanCallback {
 		public void onFound(Set<String> ip, String hostIp, int port);
 		public void onNotFound(String hostIp, int port);
 	}
-	
+
 	public IpScanner setScannerLogger(ScannerLogger logger) {
 		this.mScannerLogger = logger;
 		return this;
 	}
-	
+
 	private void printLog(String log) {
 		if (this.mScannerLogger != null) {
 			this.mScannerLogger.onScanLogPrint(log);
 		}
 	}
-	
+
 	public static interface ScannerLogger {
 		public void onScanLogPrint(String msg);
 	}
@@ -92,14 +91,14 @@ public class IpScanner extends Thread {
 			this.start();
 		}
 	}
-	
+
 	private boolean isLocalServer(String firstWord) {
 		if ("10".equals(firstWord) || "192".equals(firstWord) || "172".equals(firstWord)) {
 			return true;
 		}
 		return false;
 	}
-	
+
 	private static class Ip {
 		int position = -1;
 		int[] addr = new int[4];
@@ -107,10 +106,10 @@ public class IpScanner extends Thread {
 			position ++;
 			if (position >= 4) {
 				throw new IllegalArgumentException("Ip only 4 addr word");
-			} 
+			}
 			addr[position] = Integer.parseInt(addrWord);
 		}
-		
+
 		public String toIpString(int v) {
 			StringBuilder builder = new StringBuilder();
 			int p = ((v & 0xff000000)>> 24);
@@ -118,13 +117,13 @@ public class IpScanner extends Thread {
 				p += 256;
 			}
 			builder.append(p).append('.')
-			.append((v & 0x00ff0000) >> 16).append('.')
-			.append((v & 0x0000ff00) >> 8).append('.')
-			.append((v & 0x000000ff))
+					.append((v & 0x00ff0000) >> 16).append('.')
+					.append((v & 0x0000ff00) >> 8).append('.')
+					.append((v & 0x000000ff))
 			;
 			return builder.toString();
 		}
-		
+
 		public int toInt() {
 			if (!isFull()) {
 				throw new IllegalArgumentException("Ip only 4 addr word");
@@ -136,15 +135,15 @@ public class IpScanner extends Thread {
 			v |= (addr[3] & 0xff) ;
 			return v;
 		}
-		
+
 		public void reset() {
 			this.position = -1;
 		}
-		
+
 		public boolean isFull() {
 			return this.position == 3;
 		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
@@ -157,7 +156,7 @@ public class IpScanner extends Thread {
 			return builder.toString();
 		}
 	}
-	
+
 	private static class Mask {
 		int position = -1;
 		int[] mask = new int[4];
@@ -165,10 +164,10 @@ public class IpScanner extends Thread {
 			position ++;
 			if (position >= 4) {
 				throw new IllegalArgumentException("Mask code only 4 mask word");
-			} 
+			}
 			mask[position] = Integer.parseInt(maskWord);
 		}
-		
+
 		public int toInt() {
 			if (!isFull()) {
 				throw new IllegalArgumentException("Ip only 4 addr word");
@@ -180,24 +179,24 @@ public class IpScanner extends Thread {
 			v |= (mask[3] & 0xff) ;
 			return v;
 		}
-		
+
 		private int getValueByChar(char c) {
 			if (c >= '0' && c <= '9') {
 				return c - '0';
-			} 
+			}
 			if (c >= 'a' && c <= 'f') {
 				return 10 +( c - 'a');
 			}
 			return 0;
 		}
-		
+
 		private int parserInt(char c1,char c2) {
 			int sum = getValueByChar(c1);
 			sum = sum << 4;
 			sum += getValueByChar(c2);
 			return sum;
 		}
-		
+
 		public void parserHex(String hex) {
 			char[] code =new char[2];
 			int p ;
@@ -210,14 +209,14 @@ public class IpScanner extends Thread {
 			}
 			position = 3;
 		}
-		
+
 		public void reset() {
 			this.position = -1;
 		}
 		public boolean isFull() {
 			return this.position == 3;
 		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
@@ -230,137 +229,137 @@ public class IpScanner extends Thread {
 			return builder.toString();
 		}
 	}
-	
+
 	private void parser(InputStream is,Ip ip,Mask mask) {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(is));
 			StringBuilder ipBuilder = new StringBuilder();
-            StringBuilder maskBuilder = new StringBuilder();
-            String firstWord = null;
-            String word = null;
-            String line = reader.readLine();
-            while (line != null) {
-                line = line.toLowerCase();
-                if (!ip.isFull()) {
-                	firstWord = null;
-                    int index = line.indexOf("inet ");
-                    if (index >= 0) {
-                        index += "inet ".length();
-                        char c ;
-                        while (index < line.length()) {
-                            c = line.charAt(index);
-                            if (ipBuilder.length() == 0 && (Character.isWhitespace(c) || !Character.isDigit(c))) {
-                                index ++;
-                                continue;
-                            } else if (c == '.') {
-                            	word = ipBuilder.toString();
-                            	ipBuilder.delete(0, ipBuilder.length());
-                            	if (firstWord == null) {
-                            		firstWord = word;
-                                	if (!isLocalServer(firstWord)) {
-                                		break;
-                                	}
-                            	}
-                            	if (ip.isFull()) {
-                            		ip.reset();
-                            		break;
-                            	}
-                            	ip.push(word);
-                            	continue;
-                            } else if (!Character.isDigit(c)) {
-                            	if (ip.position == 2) {
-                            		if (ipBuilder.length() <= 0) {
-                            			ip.reset();
-                            			break;
-                            		} else {
-                            			word = ipBuilder.toString();
-                            			ipBuilder.delete(0, ipBuilder.length());
-                            			ip.push(word);
-                            		}
-                            		break;
-                            	} else {
-                            		ip.reset();
-                            		ipBuilder.delete(0, ipBuilder.length());
-                            		break;
-                            	}
-                            }
-                            ipBuilder.append(c);
-                            index ++;
-                        }
-                    }
-                }
-                
-                word = null;
-                if (ip.isFull() && !mask.isFull()) {
-                	try {
-                		boolean isParserByHex = false;
-                		int index = line.indexOf("mask");
-                        if (index >= 0) {
-                            index += "mask".length();
-                            char c ;
-                            while (index < line.length()) {
-                                c = line.charAt(index);
-                                if (maskBuilder.length() == 0 && (Character.isWhitespace(c) || !Character.isDigit(c))) {
-                                    index ++;
-                                    continue;
-                                }else if (Character.isDigit(c)) {
-                                	if (mask.position < 0 && maskBuilder.length() == 0) {
-                                		if (c == '0') { //parse by hex
-                                			index ++;
-                                			c = line.charAt(index);
-                                			if (c == 'x') {
-                                				int start = index + 1;
-                                				maskBuilder.append(line.substring(start  , start + "ffffffff".length()));
-                                				isParserByHex = true;
-                                				break;
-                                			} else {
-                                				maskBuilder.delete(0, maskBuilder.length());
-                                        		mask.reset();
-                                        		break;
-                                			}
-                                		}  else {
-                                			isParserByHex = false;
-                                		}
-                                	}
-                                }else if ('.' == c) {
-                                	word = maskBuilder.toString();
-                                	maskBuilder.delete(0, maskBuilder.length());
-                                	mask.push(word);
-                                	continue;
-                                } else if(!Character.isDigit(c)){
-                                	if (mask.position == 2) {
-                                		if (maskBuilder.length() > 0) {
-                                			mask.push(maskBuilder.toString());
-                                			maskBuilder.delete(0, maskBuilder.length());
-                                			break;
-                                		} else {
-                                			throw new IllegalArgumentException();
-                                		}
-                                	} else {
-                                		throw new IllegalArgumentException();
-                                	}
-                                }
-                                maskBuilder.append(c);
-                                index ++;
-                            }
-                            if (isParserByHex && maskBuilder.length() > 0) {
-                            	mask.parserHex(maskBuilder.toString());
-                            	break;
-                            }
-                        }
-                	} catch(Exception e){
-                		maskBuilder.delete(0, maskBuilder.length());
-                		mask.reset();
-                	}
-                }
-                if (ip.isFull() && mask.isFull()) {
-                    break;
-                }
-                line = reader.readLine();
-            }
+			StringBuilder maskBuilder = new StringBuilder();
+			String firstWord = null;
+			String word = null;
+			String line = reader.readLine();
+			while (line != null) {
+				line = line.toLowerCase();
+				if (!ip.isFull()) {
+					firstWord = null;
+					int index = line.indexOf("inet ");
+					if (index >= 0) {
+						index += "inet ".length();
+						char c ;
+						while (index < line.length()) {
+							c = line.charAt(index);
+							if (ipBuilder.length() == 0 && (Character.isWhitespace(c) || !Character.isDigit(c))) {
+								index ++;
+								continue;
+							} else if (c == '.') {
+								word = ipBuilder.toString();
+								ipBuilder.delete(0, ipBuilder.length());
+								if (firstWord == null) {
+									firstWord = word;
+									if (!isLocalServer(firstWord)) {
+										break;
+									}
+								}
+								if (ip.isFull()) {
+									ip.reset();
+									break;
+								}
+								ip.push(word);
+								continue;
+							} else if (!Character.isDigit(c)) {
+								if (ip.position == 2) {
+									if (ipBuilder.length() <= 0) {
+										ip.reset();
+										break;
+									} else {
+										word = ipBuilder.toString();
+										ipBuilder.delete(0, ipBuilder.length());
+										ip.push(word);
+									}
+									break;
+								} else {
+									ip.reset();
+									ipBuilder.delete(0, ipBuilder.length());
+									break;
+								}
+							}
+							ipBuilder.append(c);
+							index ++;
+						}
+					}
+				}
+
+				word = null;
+				if (ip.isFull() && !mask.isFull()) {
+					try {
+						boolean isParserByHex = false;
+						int index = line.indexOf("mask");
+						if (index >= 0) {
+							index += "mask".length();
+							char c ;
+							while (index < line.length()) {
+								c = line.charAt(index);
+								if (maskBuilder.length() == 0 && (Character.isWhitespace(c) || !Character.isDigit(c))) {
+									index ++;
+									continue;
+								}else if (Character.isDigit(c)) {
+									if (mask.position < 0 && maskBuilder.length() == 0) {
+										if (c == '0') { //parse by hex
+											index ++;
+											c = line.charAt(index);
+											if (c == 'x') {
+												int start = index + 1;
+												maskBuilder.append(line.substring(start  , start + "ffffffff".length()));
+												isParserByHex = true;
+												break;
+											} else {
+												maskBuilder.delete(0, maskBuilder.length());
+												mask.reset();
+												break;
+											}
+										}  else {
+											isParserByHex = false;
+										}
+									}
+								}else if ('.' == c) {
+									word = maskBuilder.toString();
+									maskBuilder.delete(0, maskBuilder.length());
+									mask.push(word);
+									continue;
+								} else if(!Character.isDigit(c)){
+									if (mask.position == 2) {
+										if (maskBuilder.length() > 0) {
+											mask.push(maskBuilder.toString());
+											maskBuilder.delete(0, maskBuilder.length());
+											break;
+										} else {
+											throw new IllegalArgumentException();
+										}
+									} else {
+										throw new IllegalArgumentException();
+									}
+								}
+								maskBuilder.append(c);
+								index ++;
+							}
+							if (isParserByHex && maskBuilder.length() > 0) {
+								mask.parserHex(maskBuilder.toString());
+								break;
+							}
+						}
+					} catch(Exception e){
+						maskBuilder.delete(0, maskBuilder.length());
+						mask.reset();
+					}
+				}
+				if (ip.isFull() && mask.isFull()) {
+					break;
+				}
+				line = reader.readLine();
+			}
 		} catch(Exception e) {
-				//TODO
+			//TODO
 		}finally {
 			if (reader != null) {
 				try {
@@ -369,36 +368,35 @@ public class IpScanner extends Thread {
 			}
 		}
 	}
-	
+
 	@Override
 	public void run() {
 		try {
-            Process process = Runtime.getRuntime().exec(mCommandStr);
-            Ip ip = new Ip();
-            Mask mask = new Mask();
-            String ipHost = null;
-            parser(process.getInputStream(), ip, mask);
+			Process process = Runtime.getRuntime().exec(mCommandStr);
+			Ip ip = new Ip();
+			Mask mask = new Mask();
+			String ipHost = null;
+			parser(process.getInputStream(), ip, mask);
 			ipHost = ip.toString();
-            if (ip.isFull() && mask.isFull()) {
-            	 printLog("host ip:"+ipHost);
-                 printLog("host mask:"+mask.toString()); 
-                 int v = mask.toInt();
-                 int vip = ip.toInt();
-                 int begin = (vip & v);
-                 v = ~v;
-                 int ipValue;
-                 for (int index = 1; index < v; index ++) {
-                	 ipValue = begin + index;
-					// System.out.println(ip.toIpString(ipValue));
-                	 if (ipValue == vip) {
-                		 continue;
-                	 } else {
-                		 String ipStr = ip.toIpString(ipValue);
-						 mLocalNetIps.add(ipStr);
-                	 }
-                 }
+			if (ip.isFull() && mask.isFull()) {
+				printLog("host ip:"+ipHost);
+				printLog("host mask:"+mask.toString());
+				int v = mask.toInt();
+				int vip = ip.toInt();
+				int begin = (vip & v);
+				v = ~v;
+				int ipValue;
+				for (int index = 2; index < v; index ++) {
+					ipValue = begin + index;
+					if (ipValue == vip) {
+						continue;
+					} else {
+						String ipStr = ip.toIpString(ipValue);
+						mLocalNetIps.add(ipStr);
+					}
+				}
 				dispatchThreads(ipHost);
-            }
+			}
 		} catch(Exception e) {
 			if (mScanCallback != null) {
 				this.mScanCallback.onNotFound(LO_IP, this.mPort);
