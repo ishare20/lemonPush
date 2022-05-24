@@ -2,6 +2,10 @@
 ## 介绍
 基于局域网内Android手机简单快捷发送剪切板内容到Windows电脑剪切板的项目，项目包括Android和Windows软件
 
+
+- [Github](https://github.com/ishare20/pushToPC)
+- [Gitee](https://gitee.com/ishare20/pushToPC)
+
 ## 下载地址
 - [Windows (7.5K)](https://caigua.lanzouh.com/iyzXS04qj1zg)
 - [Android (1.78M)](https://caigua.lanzouh.com/ipaZA04qj1yf)
