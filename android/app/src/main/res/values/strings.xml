@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">柠檬Push</string>
+    <string name="open_and_push">打开即推送</string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <item
+        android:id="@+id/set"
+        android:orderInCategory="80"
+        android:title="设置电脑IP"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/guide"
+        android:orderInCategory="80"
+        android:title="使用教程"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/version"
+        android:orderInCategory="80"
+        android:title="版本更新"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/sib_tools"
+        android:orderInCategory="80"
+        android:title="小而美的工具们"
+        app:showAsAction="never" />
+</menu>

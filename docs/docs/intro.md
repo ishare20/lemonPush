@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+# 使用教程
 ## 介绍
 同一WiFi环境下Android手机高效推送文本到电脑剪切板的工具，电脑端支持Windows、Mac、Linux平台
 
@@ -61,3 +65,4 @@
 柠檬Push如你对有所帮助，欢迎star、PR、feedback、share、donate支持开发者
 
 ![zw](https://blemon.net/files/images/lemonpush/zw.png)
+
