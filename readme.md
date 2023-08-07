@@ -62,4 +62,4 @@
 
 柠檬Push如你对有所帮助，欢迎star、PR、feedback、share、donate支持开发者
 
-![zw](https://ishare20.net/files/images/zw.jpg)
+![zw](https://raw.githubusercontent.com/ishare20/lemonPush/master/docs/static/img/zw.jpg)
