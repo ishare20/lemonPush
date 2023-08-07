@@ -6,6 +6,8 @@
 
 如电脑无法接收手机剪切板，需要配置电脑防火墙（教程待补充）
 
+如Mac电脑双击无法运行，需配置文件权限
+
 ## [下载地址](https://sibtools.app/lemon_push/docs/download)
 
 ## 功能特性
@@ -60,4 +62,4 @@
 
 柠檬Push如你对有所帮助，欢迎star、PR、feedback、share、donate支持开发者
 
-![zw](https://blemon.net/files/images/lemonpush/zw.png)
+![zw](https://ishare20.net/files/images/zw.jpg)
