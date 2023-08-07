@@ -12,25 +12,25 @@ sidebar_position: 2
 文件名称：lemon_push_v1.0.1.apk
 
 文件大小：1.79MB
-### Windows
+## Windows
 
 文件名称：lemon_push_v101_windows_amd64.exe
 
 文件大小：3.16MB
 
-### Mac 
+## Mac 
 
-#### ARM
+### ARM
 文件名称：lemon_push_v101_darwin_arm64
 
 文件大小：3.00MB
 
-####  x86_64
+###  x86_64
 文件名称：lemon_push_v101_darwin_amd64
 
 文件大小：3.00MB
 
-### Linux
+## Linux
 
 文件名称：lemon_push_v101_linux_amd64
 
