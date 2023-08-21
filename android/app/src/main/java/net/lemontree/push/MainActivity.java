@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
     private int selectPC = 0;
 
     private final String LAST_PC_KEY = "lastPC";
-    private final String TAG = "MainAc";
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
@@ -201,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-
+                runOnUiThread(() -> Toast.makeText(context, "获取失败：电脑未启动程序或IP地址错误", Toast.LENGTH_SHORT).show());
             }
 
             @Override
@@ -281,30 +280,7 @@ public class MainActivity extends AppCompatActivity {
         if (item.getItemId() == android.R.id.home) {
             finish();
         } else if (item.getItemId() == R.id.set) {
-            /*AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("电脑IP");
-            EditText editText = new EditText(this);
-            editText.setHint("请输入电脑端IP地址,如192.168.1.66");
-            builder.setView(editText);
-            builder.setPositiveButton("确定", (dialogInterface, i) -> {
-                SharedPreferences.Editor editor = sp.edit();
-                // TODO: 2022/5/5 校验是否为ip地址
-                host = editText.getText().toString();
-                if (!host.equals("")) {
-                    editor.putString("host", host);
-                    editor.apply();
-                    infoTv.setText("电脑端：" + host + ":" + PORT);
-                } else {
-                    showToast("IP地址为空，请重新输入");
-                }
-            });
-            builder.setNegativeButton("取消", (dialogInterface, i) -> {
-                dialogInterface.dismiss();
-            });
-            builder.create().show();*/
-
             startActivity(new Intent(this, PCConfigActivity.class));
-
         } else if (item.getItemId() == R.id.guide) {
             openUrl("https://sibtools.app/lemon_push/docs/intro");
         } else if (item.getItemId() == R.id.sib_tools) {
@@ -330,7 +306,6 @@ public class MainActivity extends AppCompatActivity {
             PackageManager packageManager = getPackageManager();
             PackageInfo packageInfo = packageManager.getPackageInfo(getPackageName(), 0);
             return packageInfo.versionName;
-            // 在这里可以使用 versionName 对应的值
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             return "v1.0.1";

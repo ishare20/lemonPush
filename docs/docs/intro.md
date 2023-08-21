@@ -13,7 +13,7 @@ sidebar_position: 1
 
 ![lemonpush](https://sibtools.app/lemon_push/img/lemonpush.jpg)
 
-## [下载地址](https://sibtools.app/lemon_push/docs/download)
+## [下载地址(包含iOS快捷指令)](https://sibtools.app/lemon_push/docs/download)
 
 ## 配置教程
 电脑双击启动程序后会显示电脑IP，手机安装柠檬Push App后，点击设置电脑端显示IP，可能会出现多个IP，使用局域网所在网络的IP，一般192开头，填写电脑IP后点击推送剪切板即可获取剪切板并推送至电脑端

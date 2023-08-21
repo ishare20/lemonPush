@@ -7,7 +7,7 @@ sidebar_position: 2
 ## 123云盘汇总下载链接
 
 ### v1.0.2
-(https://www.123pan.com/s/y4HrVv-WlKlA.html)[https://www.123pan.com/s/y4HrVv-WlKlA.html]
+[https://www.123pan.com/s/y4HrVv-WlKlA.html](https://www.123pan.com/s/y4HrVv-WlKlA.html)
 
 ### v1.0.1
 [https://www.123pan.com/s/y4HrVv-3RKlA.html](https://www.123pan.com/s/y4HrVv-3RKlA.html)
