@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="false">
+        <shape>
+            <solid android:color="@color/white" />
+            <!-- 四个角的弧度 -->
+            <corners
+                android:radius="3dp"/>
+        </shape>
+    </item>
+    <item android:state_checked="true">
+        <shape>
+            <solid android:color="#0093fd" />
+            <!-- 四个角的弧度 -->
+            <corners
+                android:radius="3dp"/>
+        </shape>
+    </item>
+</selector>

@@ -1,10 +1,11 @@
 package net.lemontree.push;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
-import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -13,60 +14,116 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
+
+import net.lemontree.push.model.PCClient;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.net.Socket;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
+
+import jackmego.com.jieba_android.JiebaSegmenter;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static String host = "";
     private Button sendBt;
     private Handler handler = new Handler();
-    private TextView infoTv;
+    private Button infoTv;
     private SwitchCompat openAndPushSwitch;
-    private static final int PORT = 14756; //电脑端端口
     private SharedPreferences sp;
+    private SharedPreferences pcListSp;
     private ClipboardManager clipboard;
+    private List<PCClient> pcClientList = new ArrayList<>();
+    private Context context;
+    private int selectPC = 0;
 
+    private final String LAST_PC_KEY = "lastPC";
+    private final String TAG = "MainAc";
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        context = this;
+        // 异步初始化
+        JiebaSegmenter.init(getApplicationContext());
+
         infoTv = findViewById(R.id.info);
         sendBt = findViewById(R.id.send);
         openAndPushSwitch = findViewById(R.id.open_and_push_switch);
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         sp = getSharedPreferences("settings", MODE_PRIVATE);
-        host = sp.getString("host", "");
-        sendBt.setOnClickListener(view -> sendClipboard());
+        pcListSp = getSharedPreferences("PCList", MODE_PRIVATE);
+        sendBt.setOnClickListener(view -> sendClipboard(getClipboardContent()));
         openAndPushSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
             SharedPreferences.Editor editor = sp.edit();
             editor.putBoolean("openAndPush", b);
             editor.apply();
         });
         ((TextView) findViewById(R.id.version)).setText("v" + getVersionName());
+        infoTv.setOnClickListener(view -> {
+            if (pcClientList.size() > 0) {
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
+                String[] names = pcClientList.stream()
+                        .map(pcClient -> pcClient.getIp() + ":" + pcClient.getPort())
+                        .toArray(String[]::new);
+                alertBuilder.setTitle("电脑选择");
+                alertBuilder.setSingleChoiceItems(names, selectPC, (dialogInterface, i) -> {
+                    selectPC = i;
+                    SharedPreferences.Editor editor = pcListSp.edit();
+                    editor.putInt(LAST_PC_KEY, selectPC);
+                    editor.apply();
+                    infoTv.setText("电脑端：" + pcClientList.get(selectPC).getIp() + ":" + pcClientList.get(selectPC).getPort());
+                    dialogInterface.dismiss();
+                });
+                alertBuilder.create().show();
+            }
+
+        });
+        findViewById(R.id.get).setOnClickListener(view -> getPCClipboard(pcClientList.get(selectPC)));
+        findViewById(R.id.split).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ArrayList<String> wordList = JiebaSegmenter.getJiebaSegmenterSingleton().getDividedString(getClipboardContent());
+                CustomBottomSheetDialog customBottomSheetDialog = new CustomBottomSheetDialog(MainActivity.this, wordList, new DivideCard.OperationListener() {
+                    @Override
+                    public void pushCopy(String content) {
+                        sendClipboard(content);
+                    }
+                });
+                customBottomSheetDialog.show();
+            }
+        });
     }
 
-    private void sendClipboard() {
+
+    public void sendClipboard(String text) {
         new Thread(() -> {
-            String clipStr = getClipboardContent();
-            if (!clipStr.equals("")) {
-                if (sendSocket(host, clipStr)) {
+            if (!text.equals("")) {
+                if (sendToPC(toUrl(pcClientList.get(selectPC)) + "/set_clipboard", text)) {
                     handler.post(() -> Toast.makeText(MainActivity.this, "推送成功", Toast.LENGTH_SHORT).show());
                 } else {
                     handler.post(() -> Toast.makeText(MainActivity.this, "推送失败", Toast.LENGTH_SHORT).show());
@@ -83,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
             if (clipData != null && clipData.getItemCount() > 0) {
                 ClipData.Item item = clipData.getItemAt(0);
                 CharSequence text = item.getText();
-                Log.i("TAG", "getClipboardContent: " + text);
                 if (text != null) {
                     return text.toString();
                 }
@@ -94,12 +150,20 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        if (!host.equals("")) {
-            infoTv.setText("电脑端：" + host + ":" + PORT);
-        }
         Intent intent = getIntent();
         String action = intent.getAction();
-        if (!host.equals("") && action != null) {
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<PCClient>>() {
+        }.getType();
+        String json = pcListSp.getString("PCList", "");
+        if (!json.equals("")) {
+            List<PCClient> list = gson.fromJson(json, listType);
+            pcClientList.clear();
+            pcClientList.addAll(list);
+            selectPC = pcListSp.getInt(LAST_PC_KEY, 0);
+            infoTv.setText("电脑端：" + pcClientList.get(selectPC).getIp() + ":" + pcClientList.get(selectPC).getPort());
+        }
+        if (pcClientList.size() > 0) {
             String share = "";
             if (Intent.ACTION_SEND.equals(action)) {
                 share = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -110,13 +174,12 @@ public class MainActivity extends AppCompatActivity {
             String finalShare = share;
             if (!finalShare.equals("")) {
                 new Thread(() -> {
-                    if (sendSocket(host, finalShare)) {
+                    if (sendToPC(toUrl(pcClientList.get(selectPC)) + "/get_clipboard", finalShare)) {
                         handler.post(() -> {
                                     Toast.makeText(MainActivity.this, "发送成功", Toast.LENGTH_SHORT).show();
                                     finish();
                                 }
                         );
-
                     } else {
                         handler.post(() -> Toast.makeText(MainActivity.this, "发送失败", Toast.LENGTH_SHORT).show());
                         finish();
@@ -126,9 +189,42 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "请手动设置电脑IP", Toast.LENGTH_LONG).show();
         }
-
-
         super.onResume();
+    }
+
+    private void getPCClipboard(PCClient pcClient) {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(toUrl(pcClient) + "/get_clipboard")
+                .build();
+        Call call = client.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                try {
+                    String json = response.body().string();
+                    JsonParser parser = new JsonParser();
+                    JsonElement jsonElement = parser.parse(json);
+                    ClipData clip = ClipData.newPlainText("label", jsonElement.getAsJsonObject().get("data").getAsString());
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(clip);
+                    runOnUiThread(() -> Toast.makeText(context, "已经获取PC剪切板内容", Toast.LENGTH_SHORT).show());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+
+    }
+
+    private String toUrl(PCClient pcClient) {
+        return "http://" + pcClient.getIp() + ":" + pcClient.getPort();
     }
 
     @Override
@@ -136,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
         if (hasFocus) {
             boolean openAndPush = sp.getBoolean("openAndPush", false);
             if (openAndPush) {
-                sendClipboard();
+                sendClipboard(getClipboardContent());
                 openAndPushSwitch.setChecked(true);
             } else {
                 openAndPushSwitch.setChecked(false);
@@ -145,23 +241,21 @@ public class MainActivity extends AppCompatActivity {
         super.onWindowFocusChanged(hasFocus);
     }
 
-    public static boolean sendSocket(String host, String content) {
-        int port = PORT;
-        Socket socket = null;
-        OutputStream outputStream = null;
+    public static boolean sendToPC(String url, String content) {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(url + "?text=" + content)
+                .build();
+        Call call = client.newCall(request);
         try {
-            socket = new Socket(host, port);
-            // 建立连接后获得输出流
-            outputStream = socket.getOutputStream();
-            String message = content;
-            socket.getOutputStream().write(message.getBytes("UTF-8"));
-            outputStream.close();
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                return true;
+            }
+        } catch (IOException exception) {
+            exception.printStackTrace();
             return false;
         }
-
         return true;
     }
 
@@ -187,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
         if (item.getItemId() == android.R.id.home) {
             finish();
         } else if (item.getItemId() == R.id.set) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            /*AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("电脑IP");
             EditText editText = new EditText(this);
             editText.setHint("请输入电脑端IP地址,如192.168.1.66");
@@ -207,7 +301,10 @@ public class MainActivity extends AppCompatActivity {
             builder.setNegativeButton("取消", (dialogInterface, i) -> {
                 dialogInterface.dismiss();
             });
-            builder.create().show();
+            builder.create().show();*/
+
+            startActivity(new Intent(this, PCConfigActivity.class));
+
         } else if (item.getItemId() == R.id.guide) {
             openUrl("https://sibtools.app/lemon_push/docs/intro");
         } else if (item.getItemId() == R.id.sib_tools) {

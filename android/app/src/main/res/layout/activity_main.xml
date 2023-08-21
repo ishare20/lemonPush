@@ -5,18 +5,18 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:layout_centerVertical="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
         android:gravity="center"
         android:orientation="vertical">
 
-        <TextView
+        <Button
             android:id="@+id/info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="未设置电脑端IP" />
+            android:text="设置电脑IP后点这里选择电脑" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/open_and_push_switch"
@@ -24,6 +24,32 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
             android:text="@string/open_and_push" />
+
+        <Button
+            android:id="@+id/get"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/btn_normal"
+            android:padding="15dp"
+            android:text="获取剪切板"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/split"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/btn_normal"
+            android:padding="15dp"
+            android:text="分词后推送"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/send"
@@ -37,6 +63,8 @@
             android:textColor="@color/white"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+
     </LinearLayout>
 
 
@@ -44,8 +72,8 @@
         android:id="@+id/version"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
         android:layout_alignParentBottom="true"
+        android:layout_marginBottom="24dp"
         android:text="v1.0.1"
         android:textAlignment="center" />
 

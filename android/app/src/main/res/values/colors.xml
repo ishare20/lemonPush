@@ -5,4 +5,60 @@
     <color name="colorAccent">#D81B60</color>
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
+    <color name="gray">#999999</color>
+    <color name="light_gray">#f2f2f2</color>
+    <color name="red">#e4320e</color>
+    <color name="blue">#2887ee</color>
+    <color name="yellow">#ffd03e</color>
+    <color name="green">#12bc65</color>
+    <color name="gray_black">#545b63</color>
+    <color name="dark_black">#000000</color>
+
+    <color name="default_activity_bg">#f0eff4</color>
+    <color name="me_head_bg">#0086ea</color>
+    <color name="split_line_color">#e6e6e6</color>
+    <color name="recharge_blue" >#0087e9</color>
+    <color name="nbg_gray" >#e8e8e8</color>
+    <color name="bslt" >#575d66</color>
+
+    <color name="hint">#aaaaaa</color>
+    <color name="light_hint">#bfbfbf</color>
+    <color name="wpb_black">#2b2f33</color>
+
+    <color name="util_small_money">#3d4042</color>
+    <color name="util_small_notice">#9b9b9b</color>
+    <color name="light_blue">#6892DA</color>
+    <color name="green_blue">#73CCE8</color>
+    <color name="deep_yellow">#F29B29</color>
+
+    <color name="bg_my_joinbuy_list">#F2F2F2</color>
+    <color name="bg_dialog_gray">#60000000</color>
+
+    <color name="light_red">#f5493d</color>
+    <color name="deep_red">#c33026</color>
+    <color name="quota_label">#aaaaaa</color>
+    <color name="gray_light_6a">#aaaaaa</color>
+    <color name="text_dark_black_2">#333333</color>
+
+    <color name="divider_line_color">#aaaaaa</color>
+    <color name="offwhite_color">#f1f1f1</color>
+    <color name="deepyellow">#ffeb68</color>
+    <color name="dialog_bg">#70000000</color>
+
+    <color name="login_tab_text_default">#696d78</color>
+    <color name="login_tab_text_checked">#fcfcfc</color>
+
+    <color name="holo_blue">#FF33E5B5</color>
+    <color name="num_blue">#419DE4</color>
+    <color name="viewfinder_mask">#60000000</color>
+    <color name="result_view">#b0000000</color>
+    <color name="possible_result_points">#c0ffff00</color>
+    <color name="theme_yellow">#fece6b</color>
+    <color name="positive">#F4564D</color>
+
+    <color name="textBlue">#3b9bfe</color>
+    <color name="textGray">#aeaeae</color>
+    <color name="gray_bkg">#edf4ff</color>
+    <color name="divider_aeaeae">#aeaeae</color>
+    <color name="transparent">#00000000</color>
 </resources>

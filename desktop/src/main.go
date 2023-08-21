@@ -3,10 +3,16 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"os/exec"
 	"regexp"
 	"runtime"
 	"time"
+	"bufio"
+	"os"
+	"strings"
+	"encoding/json"
+	"path/filepath"
 
 	"github.com/atotto/clipboard"
 )
@@ -14,32 +20,22 @@ import (
 var dt = time.Now()
 
 func main() {
-	socketService()
-}
+	http.HandleFunc("/set_clipboard", setClipboard)
+	http.HandleFunc("/get_clipboard", getClipboard)
+	config, lerr := loadConfigFile("lemon_push.conf")
+	if lerr != nil {
+        fmt.Println("加载配置lemon_push.conf失败:", lerr)
+        return
+    }
+	port := ":"+config["port"] // 监听端口
 
-func socketService() {
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端已启动")
-
 	getLocalIP()
+	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端监听端口:", config["port"])
 
-	port := 14756 //监听端口
-
-	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端监听端口:", port)
-
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", "0.0.0.0", port))
+	err := http.ListenAndServe(port, nil)
 	if err != nil {
-		fmt.Println("Error listening:", err.Error())
-		return
-	}
-	defer listener.Close()
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println("Error accepting: ", err.Error())
-			return
-		}
-		go handleRequest(conn)
+		fmt.Println("Error starting HTTP server:", err)
 	}
 }
 
@@ -57,6 +53,7 @@ func getLocalIP() {
 		}
 	}
 }
+
 func openBrowser(url string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
@@ -72,22 +69,12 @@ func openBrowser(url string) error {
 	return cmd.Start()
 }
 
-func handleRequest(conn net.Conn) {
-	//处理客户端请求
-	defer conn.Close()
-
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println("Error reading:", err.Error())
-		return
-	}
-
-	code := string(buf[:n])
-	fmt.Printf("%s   接收客户端%s的消息：\n%s\n", dt.Format("2006-01-02 15:04:05"), conn.RemoteAddr().String(), code)
+func setClipboard(w http.ResponseWriter, r *http.Request) {
+	values := r.URL.Query()
+	code := values.Get("text")
 	clipboard.WriteAll(code)
-	//匹配URL
-	p := regexp.MustCompile(`(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?`)
+	fmt.Println("客户端 "+r.RemoteAddr+" 设置剪切板："+code)
+	p := regexp.MustCompile(`https?://[^\s]+/[^/]+`)
 	if p.MatchString(code) {
 		matches := p.FindAllString(code, -1)
 		for _, match := range matches {
@@ -95,12 +82,116 @@ func handleRequest(conn net.Conn) {
 			openBrowser(match)
 		}
 	}
-
-	//给Client端返回信息
-	sendStr := "已成功接到您发送的消息"
-	_, err = conn.Write([]byte(sendStr))
+	
+	w.Header().Set("Content-Type", "application/json")
+	resp := make(map[string]string)
+	sendStr := "ok"
+	resp["data"] = sendStr
+	resp["code"] = "0"
+	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		fmt.Println("Error sending:", err.Error())
 		return
 	}
+	w.Write(jsonResp)
+	return
 }
+
+func getClipboard(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	resp := make(map[string]string)
+	text, _ := clipboard.ReadAll()
+	fmt.Println("客户端 "+r.RemoteAddr+" 获取剪切板："+text)
+	resp["data"] = text
+	resp["code"] = "0"
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	w.Write(jsonResp)
+	return
+}
+func loadConfigFile(filename string) (map[string]string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	execDir := filepath.Dir(execPath)
+	filePath := filepath.Join(execDir, filename)
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		// 文件不存在，使用默认配置并创建文件
+		config := make(map[string]string)
+		config["port"] = "14756"
+
+		// 创建文件并写入默认配置
+		file, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+
+		writer := bufio.NewWriter(file)
+		for key, value := range config {
+			_, err := writer.WriteString(key + "=" + value + "\n")
+			if err != nil {
+				return nil, err
+			}
+		}
+		writer.Flush()
+
+		return config, nil
+	}
+	defer file.Close()
+
+	config := make(map[string]string)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			config[key] = value
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+
+/* func loadConfigFile(filename string) (map[string]string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	execDir := filepath.Dir(execPath)
+	filePath := filepath.Join(execDir, filename)
+    file, err := os.Open(filePath)
+    if err != nil {
+        return nil, err
+    }
+    defer file.Close()
+
+    config := make(map[string]string)
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+        line := scanner.Text()
+        parts := strings.SplitN(line, "=", 2)
+        if len(parts) == 2 {
+            key := strings.TrimSpace(parts[0])
+            value := strings.TrimSpace(parts[1])
+            config[key] = value
+        }
+    }
+
+    if err := scanner.Err(); err != nil {
+        return nil, err
+    }
+
+    return config, nil
+} */
