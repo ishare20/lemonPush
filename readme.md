@@ -1,5 +1,9 @@
 ## 柠檬Push
+ [简体中文](readme.md) | [English](readme-en.md)
+ 
 同一WiFi环境下手机高效推送文本到电脑剪切板的工具，移动端支持Android、iOS，电脑端支持Windows、Mac、Linux平台
+
+LemonPush is an efficient tool for pushing text from your mobile device to your computer's clipboard under the same WiFi environment. It supports Android and iOS on the mobile side, and Windows, Mac, and Linux platforms on the computer side.
 
 ## 功能特性
 - 一键推送手机剪切板文本至电脑剪切板，文本中如包含网址可自动识别并使用默认浏览器打开
