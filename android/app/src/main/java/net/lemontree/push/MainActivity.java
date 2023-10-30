@@ -1,11 +1,15 @@
 package net.lemontree.push;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -29,6 +33,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.xuexiang.xqrcode.XQRCode;
 
 import net.lemontree.push.model.PCClient;
 
@@ -59,6 +64,9 @@ public class MainActivity extends AppCompatActivity {
     private Context context;
     private int selectPC = 0;
 
+    private final int PERMISSION_REQUEST_CAMERA = 104;
+    private final int REQUEST_CODE = 105;
+
     private final String LAST_PC_KEY = "lastPC";
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -69,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
         context = this;
         // 异步初始化
         JiebaSegmenter.init(getApplicationContext());
-
         infoTv = findViewById(R.id.info);
         sendBt = findViewById(R.id.send);
         openAndPushSwitch = findViewById(R.id.open_and_push_switch);
@@ -155,12 +162,14 @@ public class MainActivity extends AppCompatActivity {
         Type listType = new TypeToken<List<PCClient>>() {
         }.getType();
         String json = pcListSp.getString("PCList", "");
-        if (!json.equals("")) {
+        if (json != null && !json.equals("")) {
             List<PCClient> list = gson.fromJson(json, listType);
-            pcClientList.clear();
-            pcClientList.addAll(list);
-            selectPC = pcListSp.getInt(LAST_PC_KEY, 0);
-            infoTv.setText("电脑端：" + pcClientList.get(selectPC).getIp() + ":" + pcClientList.get(selectPC).getPort());
+            if (list.size() > 0) {
+                pcClientList.clear();
+                pcClientList.addAll(list);
+                selectPC = pcListSp.getInt(LAST_PC_KEY, 0);
+                infoTv.setText("电脑端：" + pcClientList.get(selectPC).getIp() + ":" + pcClientList.get(selectPC).getPort());
+            }
         }
         if (pcClientList.size() > 0) {
             String share = "";
@@ -186,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
                 }).start();
             }
         } else {
-            Toast.makeText(this, "请手动设置电脑IP", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "请设置电脑IP和端口", Toast.LENGTH_LONG).show();
         }
         super.onResume();
     }
@@ -276,6 +285,80 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        /**
+         * 处理二维码扫描结果
+         */
+        //处理二维码扫描结果
+        if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
+            //处理扫描结果（在界面上显示）
+            handleScanResult(data);
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CAMERA) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                XQRCode.startScan(this, REQUEST_CODE);
+            }
+        } else {
+            Toast.makeText(context, "未授权相机权限", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 处理二维码扫描结果
+     *
+     * @param data
+     */
+    private void handleScanResult(Intent data) {
+        if (data != null) {
+            Bundle bundle = data.getExtras();
+            if (bundle != null) {
+                if (bundle.getInt(XQRCode.RESULT_TYPE) == XQRCode.RESULT_SUCCESS) {
+                    String result = bundle.getString(XQRCode.RESULT_DATA);
+                    Toast.makeText(this, "扫码二维码成功", Toast.LENGTH_LONG).show();
+                    if (result != null) {
+                        String[] str = result.split(":");
+                        String ip = str[0];
+                        String port = str[1];
+                        PCClient pcClient = new PCClient(ip, ip, port);
+                        if (checkSameIPAndPort(pcClient) != -1) {
+                            selectPC = checkSameIPAndPort(pcClient);
+                            Toast.makeText(this, "切换电脑成功", Toast.LENGTH_LONG).show();
+                        } else {
+                            pcClientList.add(pcClient);
+                            Gson gson = new Gson();
+                            pcListSp.edit().putString("PCList", gson.toJson(pcClientList)).apply();
+                            selectPC = pcClientList.size() - 1;
+                        }
+                        pcListSp.edit().putInt(LAST_PC_KEY, selectPC).apply();
+                        infoTv.setText("电脑端：" + pcClientList.get(selectPC).getIp() + ":" + pcClientList.get(selectPC).getPort());
+
+                    }
+                } else if (bundle.getInt(XQRCode.RESULT_TYPE) == XQRCode.RESULT_FAILED) {
+                    Toast.makeText(this, "解析二维码失败", Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    }
+
+    private int checkSameIPAndPort(PCClient pcClient) {
+        if (pcClientList.size() > 0) {
+            for (int i = 0; i < pcClientList.size(); i++) {
+                if (pcClientList.get(i).getIp().equals(pcClient.getIp()) && pcClientList.get(i).getPort().equals(pcClient.getPort())) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
@@ -287,8 +370,21 @@ public class MainActivity extends AppCompatActivity {
             openUrl("https://sibtools.app");
         } else if (item.getItemId() == R.id.version) {
             openUrl("https://sibtools.app/lemon_push/docs/version");
+        } else if (item.getItemId() == R.id.scan) {
+            requestCameraPermission();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void requestCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    PERMISSION_REQUEST_CAMERA);
+        } else {
+            XQRCode.startScan(this, REQUEST_CODE);
+        }
     }
 
     private void showToast(String msg) {

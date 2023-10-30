@@ -2,12 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <item
+        android:id="@+id/scan"
+        android:orderInCategory="80"
+        android:title="扫码连接"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/set"
         android:orderInCategory="80"
-        android:title="设置电脑IP"
+        android:title="手动输入"
         app:showAsAction="always" />
+
+
     <item
         android:id="@+id/guide"
         android:orderInCategory="80"

@@ -1,20 +1,22 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
-	"time"
-	"bufio"
-	"os"
+	"strconv"
 	"strings"
-	"encoding/json"
-	"path/filepath"
+	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/mdp/qrterminal/v3"
 )
 
 var dt = time.Now()
@@ -24,22 +26,53 @@ func main() {
 	http.HandleFunc("/get_clipboard", getClipboard)
 	config, lerr := loadConfigFile("lemon_push.conf")
 	if lerr != nil {
-        fmt.Println("加载配置lemon_push.conf失败:", lerr)
-        return
-    }
-	port := ":"+config["port"] // 监听端口
-
-	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端已启动")
-	getLocalIP()
+		fmt.Println("加载配置lemon_push.conf失败:", lerr)
+		return
+	}
+	port := ":" + config["port"] // 监听端口
+	var selectedIP string
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端监听端口:", config["port"])
+	localIPs := getLocalIP()
+	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  本机IP列表:")
+	for i, ip := range localIPs {
+		fmt.Printf("%d. %s\n", i+1, ip)
+	}
+	for {
+		fmt.Print("输入序号选择一个IP地址(仅用于生成二维码): ")
+		reader := bufio.NewReader(os.Stdin)
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+		index, err := strconv.Atoi(input)
+		if err == nil && index >= 1 && index <= len(localIPs) {
+			selectedIP = localIPs[index-1]
+			break
+		}
+		fmt.Println("无效的选择，请重新输入.")
+	}
 
+	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  选择的IP地址:", selectedIP, " 请使用App扫码连接")
+	url := selectedIP + port
+	qRCode2ConsoleWithUrl(url)
+	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端已启动")
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		fmt.Println("Error starting HTTP server:", err)
 	}
+
 }
 
-func getLocalIP() {
+func qRCode2ConsoleWithUrl(url string) {
+	config := qrterminal.Config{
+		Level:     qrterminal.L,
+		BlackChar: qrterminal.BLACK,
+		WhiteChar: qrterminal.WHITE,
+		Writer:    os.Stdout,
+	}
+	qrterminal.GenerateWithConfig(url, config)
+}
+
+func getLocalIP() []string {
+	var ips []string
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		fmt.Println(err)
@@ -48,10 +81,12 @@ func getLocalIP() {
 		// 检查ip地址判断是否回环地址
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
-				fmt.Println(dt.Format("2006-01-02 15:04:05"), "  本机IP:", ipnet.IP.String())
+				// fmt.Println(dt.Format("2006-01-02 15:04:05"), "  本机IP:", ipnet.IP.String())
+				ips = append(ips, ipnet.IP.String())
 			}
 		}
 	}
+	return ips
 }
 
 func openBrowser(url string) error {
@@ -73,7 +108,7 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 	code := values.Get("text")
 	clipboard.WriteAll(code)
-	fmt.Println("客户端 "+r.RemoteAddr+" 设置剪切板："+code)
+	fmt.Println("客户端 " + r.RemoteAddr + " 设置剪切板：" + code)
 	p := regexp.MustCompile(`https?://[^\s]+/[^/]+`)
 	if p.MatchString(code) {
 		matches := p.FindAllString(code, -1)
@@ -82,7 +117,7 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 			openBrowser(match)
 		}
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	resp := make(map[string]string)
 	sendStr := "ok"
@@ -96,11 +131,11 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func getClipboard(w http.ResponseWriter, r *http.Request){
+func getClipboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	resp := make(map[string]string)
 	text, _ := clipboard.ReadAll()
-	fmt.Println("客户端 "+r.RemoteAddr+" 获取剪切板："+text)
+	fmt.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + text)
 	resp["data"] = text
 	resp["code"] = "0"
 	jsonResp, err := json.Marshal(resp)
@@ -162,7 +197,6 @@ func loadConfigFile(filename string) (map[string]string, error) {
 
 	return config, nil
 }
-
 
 /* func loadConfigFile(filename string) (map[string]string, error) {
 	execPath, err := os.Executable()

@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -63,9 +64,10 @@ fun MyScreen(pcClientViewModel: PCClientViewModel, activity: PCConfigActivity) {
 
     Scaffold(topBar = {
         TopAppBar {
+
             TopAppBar(title = {
                 Text(text = "电脑管理", color = Color.White)
-            }, elevation = 0.dp, navigationIcon = {
+            }, backgroundColor = Color(0xFF008577), elevation = 0.dp, navigationIcon = {
                 IconButton(
                     content = {
                         Icon(

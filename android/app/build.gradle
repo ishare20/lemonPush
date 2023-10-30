@@ -7,8 +7,8 @@ android {
         applicationId "net.lemontree.push"
         minSdkVersion 21
         targetSdkVersion 32
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 4
+        versionName "1.0.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
@@ -53,6 +53,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation 'jackmego.com.jieba_android:jieba_android-release:0.1.0'
     implementation 'com.hyman:flowlayout-lib:1.1.2'
+    implementation 'com.github.xuexiangjys:XQRCode:1.1.1'
+
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"

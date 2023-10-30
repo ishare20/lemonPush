@@ -10,6 +10,7 @@ LemonPush is an efficient tool for pushing text from your mobile device to your 
 - 支持打开即推送，支持接收其他App分享的文本
 - 无图形界面、无需安装、体积小、电脑端支持多平台
 - 支持多台手机推送到电脑，App支持多台电脑
+- App支持扫码连接，无需手动输入
 
 ![lemonpush](https://sibtools.app/lemon_push/img/lemonpush.jpg)
 
