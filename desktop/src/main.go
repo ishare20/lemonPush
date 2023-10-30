@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -20,34 +21,45 @@ import (
 )
 
 var dt = time.Now()
+var folder = "./_lemon_"
 
 func main() {
 	http.HandleFunc("/set_clipboard", setClipboard)
 	http.HandleFunc("/get_clipboard", getClipboard)
+	http.HandleFunc("/download", download)
+	http.HandleFunc("/upload", upload)
 	config, lerr := loadConfigFile("lemon_push.conf")
 	if lerr != nil {
 		fmt.Println("加载配置lemon_push.conf失败:", lerr)
 		return
 	}
 	port := ":" + config["port"] // 监听端口
-	var selectedIP string
-	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端监听端口:", config["port"])
-	localIPs := getLocalIP()
-	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  本机IP列表:")
-	for i, ip := range localIPs {
-		fmt.Printf("%d. %s\n", i+1, ip)
+	selectedIP := config["ip"]   // ip地址
+	folder = config["folder"]    // 文件夹
+	if folder != "" {
+		createFolderIfNotExists(folder)
 	}
-	for {
-		fmt.Print("输入序号选择一个IP地址(仅用于生成二维码): ")
-		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-		index, err := strconv.Atoi(input)
-		if err == nil && index >= 1 && index <= len(localIPs) {
-			selectedIP = localIPs[index-1]
-			break
+
+	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端监听端口:", config["port"])
+
+	if selectedIP == "" {
+		localIPs := getLocalIP()
+		fmt.Println(dt.Format("2006-01-02 15:04:05"), "  本机IP列表:")
+		for i, ip := range localIPs {
+			fmt.Printf("%d. %s\n", i+1, ip)
 		}
-		fmt.Println("无效的选择，请重新输入.")
+		for {
+			fmt.Print("输入序号选择一个IP地址(仅用于生成二维码): ")
+			reader := bufio.NewReader(os.Stdin)
+			input, _ := reader.ReadString('\n')
+			input = strings.TrimSpace(input)
+			index, err := strconv.Atoi(input)
+			if err == nil && index >= 1 && index <= len(localIPs) {
+				selectedIP = localIPs[index-1]
+				break
+			}
+			fmt.Println("无效的选择，请重新输入.")
+		}
 	}
 
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  选择的IP地址:", selectedIP, " 请使用App扫码连接")
@@ -128,7 +140,6 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(jsonResp)
-	return
 }
 
 func getClipboard(w http.ResponseWriter, r *http.Request) {
@@ -143,8 +154,96 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(jsonResp)
-	return
 }
+
+func download(w http.ResponseWriter, r *http.Request) {
+	values := r.URL.Query()
+	fileName := values.Get("filename")
+	folderPath := folder
+
+	fmt.Println("客户端 " + r.RemoteAddr + " 下载文件：" + fileName)
+	separator := string(filepath.Separator)
+	file, err := os.Open(folderPath + separator + fileName)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "文件未找到", http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "文件信息无法获取", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", fmt.Sprint(fileInfo.Size()))
+
+	_, copyErr := io.Copy(w, file)
+	if copyErr != nil {
+		fmt.Println(copyErr)
+		http.Error(w, "文件无法下载", http.StatusInternalServerError)
+		return
+	}
+}
+
+func upload(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("客户端 " + r.RemoteAddr + " 上传文件")
+	r.ParseMultipartForm(32 << 20)
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	fmt.Println("文件名: " + handler.Filename)
+	fmt.Println("文件大小: ", handler.Size)
+	fmt.Println("MIME类型: " + handler.Header.Get("Content-Type"))
+	// 创建一个目标文件
+	separator := string(filepath.Separator)
+	targetFile, err := os.Create(folder + separator + handler.Filename)
+	fmt.Println("文件路径: " + targetFile.Name())
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer targetFile.Close()
+
+	// 将上传的文件内容拷贝到目标文件
+	_, copyErr := io.Copy(targetFile, file)
+	if copyErr != nil {
+		fmt.Println(copyErr)
+		return
+	}
+
+	resp := make(map[string]string)
+	sendStr := "ok"
+	resp["data"] = sendStr
+	resp["code"] = "0"
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	w.Write(jsonResp)
+}
+
+func createFolderIfNotExists(folderPath string) error {
+	_, err := os.Stat(folderPath)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(folderPath, 0755) // 0755代表默认的文件夹权限
+		if errDir != nil {
+			return errDir
+		}
+		fmt.Println("文件夹不存在，已创建:", folderPath)
+	} else {
+		fmt.Println("文件夹已存在:", folderPath)
+	}
+	return nil
+}
+
 func loadConfigFile(filename string) (map[string]string, error) {
 	execPath, err := os.Executable()
 	if err != nil {
@@ -197,35 +296,3 @@ func loadConfigFile(filename string) (map[string]string, error) {
 
 	return config, nil
 }
-
-/* func loadConfigFile(filename string) (map[string]string, error) {
-	execPath, err := os.Executable()
-	if err != nil {
-		return nil, err
-	}
-	execDir := filepath.Dir(execPath)
-	filePath := filepath.Join(execDir, filename)
-    file, err := os.Open(filePath)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
-
-    config := make(map[string]string)
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        line := scanner.Text()
-        parts := strings.SplitN(line, "=", 2)
-        if len(parts) == 2 {
-            key := strings.TrimSpace(parts[0])
-            value := strings.TrimSpace(parts[1])
-            config[key] = value
-        }
-    }
-
-    if err := scanner.Err(); err != nil {
-        return nil, err
-    }
-
-    return config, nil
-} */
