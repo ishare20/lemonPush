@@ -5,21 +5,10 @@
 
 LemonPush is an efficient tool for pushing text from your mobile device to your computer's clipboard under the same WiFi environment. It supports Android and iOS on the mobile side, and Windows, Mac, and Linux platforms on the computer side.
 
-## 功能特性
-- 一键推送手机剪切板文本至电脑剪切板，文本中如包含网址可自动识别并使用默认浏览器打开
-- 支持打开即推送，支持接收其他App分享的文本
-- 无图形界面、无需安装、体积小、电脑端支持多平台
-- 支持多台手机推送到电脑，App支持多台电脑
-- App支持扫码连接，无需手动输入
-
-![lemonpush](https://sibtools.app/lemon_push/img/lemonpush.jpg)
-
-## [下载地址(包含iOS快捷指令)](https://sibtools.app/lemon_push/docs/download)
-
 ## 配置教程
-电脑双击启动程序后会显示电脑IP，手机安装柠檬Push App后，点击设置电脑端显示IP，可能会出现多个IP，使用局域网所在网络的IP，一般192开头，填写电脑IP后点击推送剪切板即可获取剪切板并推送至电脑端
+电脑双击启动程序后会显示电脑IP，手机安装柠檬Push App后，点击设置电脑端显示IP，可能会出现多个IP，使用局域网所在网络的IP，一般192开头，扫码连接或填写电脑IP后点击推送剪切板即可获取剪切板并推送至电脑端
 
-程序首次运行会创建默认配置文件lemon_push.conf，如出现端口冲突可在配置文件修改端口号后重启程序
+程序首次运行会创建默认配置文件lemon_push.conf,如出现端口冲突可在配置文件修改端口号后重启程序
 
 ## 接口说明
 ### 写入电脑剪切板
@@ -42,10 +31,20 @@ LemonPush is an efficient tool for pushing text from your mobile device to your 
     "data":"电脑剪切板内容"
 }
 ```
+### 上传文件
+文件保存在目录`./_lemon_`
+`/upload`
+
+`curl --location --request POST 'http://localhost:14756/upload' \
+--form 'file=@"/E:/Downloads/__UNI__F0B72F8_0809143049.apk"'`
+
+### 下载文件
+`curl --location --request GET 'http://localhost:14756/download?filename=__UNI__F0B72F8_0809143049.apk'`
+
 ## 常见问题
 - 电脑无法接收手机剪切板，需要配置电脑防火墙（教程待补充）
 - Mac电脑双击无法运行，需配置文件权限，运行命令`chmod u+x 程序文件名`
-- 双击程序运行会展示控制台并输出日志，如不需要控制台，可后台运行
+- 双击程序运行会展示控制台并输出日志，如不需要控制台，可后台运行，后台运行需在配置文件lemon.conf中填写电脑ip(ip默认为空，需首次在控制台运行生成一份默认配置文件)
 Windows运行`Start-Process -WindowStyle hidden -FilePath "程序"`，Mac运行`nohup 程序 &`
 
 ## 开发背景
