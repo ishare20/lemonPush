@@ -33,12 +33,20 @@ LemonPush is an efficient tool for pushing text from your mobile device to your 
 ```
 ### 上传文件
 文件保存在目录`./_lemon_`
+
 `/upload`
+
+请求示例
 
 `curl --location --request POST 'http://localhost:14756/upload' \
 --form 'file=@"/E:/Downloads/__UNI__F0B72F8_0809143049.apk"'`
 
 ### 下载文件
+
+`/download`
+
+请求示例
+
 `curl --location --request GET 'http://localhost:14756/download?filename=__UNI__F0B72F8_0809143049.apk'`
 
 ## 常见问题
