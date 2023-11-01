@@ -59,6 +59,14 @@ LemonPush is an efficient tool for pushing text from your mobile device to your 
 
 `curl --location --request GET 'http://localhost:14756/download?filename=__UNI__F0B72F8_0809143049.apk'`
 
+### WEBUI
+
+cd wenui && start build_webui.bat
+
+请求示例
+
+`http://localhost:14756/webui`
+
 ## 常见问题
 
 -   电脑无法接收手机剪切板，需要配置电脑防火墙（教程待补充）
