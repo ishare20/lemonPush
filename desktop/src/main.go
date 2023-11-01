@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"os"
@@ -24,10 +25,18 @@ var dt = time.Now()
 var folder = "./_lemon_"
 
 func main() {
+	// webui
+	wd, _ := os.Getwd()
+	webuiDir := filepath.Join(wd, "webui")
+	fs := http.FileServer(http.Dir(webuiDir))
+	http.Handle("/webui/", http.StripPrefix("/webui/", fs))
+
 	http.HandleFunc("/set_clipboard", setClipboard)
 	http.HandleFunc("/get_clipboard", getClipboard)
 	http.HandleFunc("/download", download)
 	http.HandleFunc("/upload", upload)
+	http.HandleFunc("/list", list)
+
 	config, lerr := loadConfigFile("lemon_push.conf")
 	if lerr != nil {
 		fmt.Println("加载配置lemon_push.conf失败:", lerr)
@@ -66,6 +75,9 @@ func main() {
 	url := selectedIP + port
 	qRCode2ConsoleWithUrl(url)
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端已启动")
+	// fixed bug: https://github.com/golang/go/issues/32350#issuecomment-1128475902
+	_ = mime.AddExtensionType(".js", "text/javascript")
+
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		fmt.Println("Error starting HTTP server:", err)
@@ -117,6 +129,8 @@ func openBrowser(url string) error {
 }
 
 func setClipboard(w http.ResponseWriter, r *http.Request) {
+	// 设置跨域
+	setCORS(w)
 	values := r.URL.Query()
 	code := values.Get("text")
 	clipboard.WriteAll(code)
@@ -143,6 +157,7 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func getClipboard(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
 	w.Header().Set("Content-Type", "application/json")
 	resp := make(map[string]string)
 	text, _ := clipboard.ReadAll()
@@ -157,6 +172,7 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
 	values := r.URL.Query()
 	fileName := values.Get("filename")
 	folderPath := folder
@@ -191,6 +207,7 @@ func download(w http.ResponseWriter, r *http.Request) {
 }
 
 func upload(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
 	fmt.Println("客户端 " + r.RemoteAddr + " 上传文件")
 	r.ParseMultipartForm(32 << 20)
 	file, handler, err := r.FormFile("file")
@@ -230,6 +247,19 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
+func list(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
+	resp := make(map[string]interface{})
+	list, _ := getFilesInFolder(folder)
+	resp["data"] = list
+	resp["code"] = "0"
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	w.Write(jsonResp)
+}
+
 func createFolderIfNotExists(folderPath string) error {
 	_, err := os.Stat(folderPath)
 	if os.IsNotExist(err) {
@@ -242,6 +272,55 @@ func createFolderIfNotExists(folderPath string) error {
 		fmt.Println("文件夹已存在:", folderPath)
 	}
 	return nil
+}
+
+func getFilesInFolder(folderPath string) ([]string, error) {
+	var files []string
+
+	// 读取文件夹
+	err := filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			files = append(files, info.Name())
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+// 设置跨域
+func setCORS(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+// 根据文件后缀获取 MIME 类型
+func getContentType(file string) string {
+	extension := strings.ToLower(filepath.Ext(file))
+	switch extension {
+	case ".html":
+		return "text/html"
+	case ".css":
+		return "text/css"
+	case ".js":
+		return "application/javascript"
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".pdf":
+		return "application/pdf"
+	default:
+		return "text/plain"
+	}
 }
 
 func loadConfigFile(filename string) (map[string]string, error) {

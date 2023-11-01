@@ -17,3 +17,4 @@
 /desktop/dist
 /docs/node_modules
 /docs/deploy.sh
+node_modules
