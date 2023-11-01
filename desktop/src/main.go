@@ -336,6 +336,8 @@ func loadConfigFile(filename string) (map[string]string, error) {
 		// 文件不存在，使用默认配置并创建文件
 		config := make(map[string]string)
 		config["port"] = "14756"
+		config["folder"] = "./_lemon_"
+		config["ip"] = ""
 
 		// 创建文件并写入默认配置
 		file, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)
