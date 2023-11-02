@@ -67,6 +67,30 @@ cd wenui && start build_webui.bat
 
 `http://localhost:14756/webui`
 
+### HOOK
+
+```
+// 新增配置项
+ClippedHook=hook.js
+
+// hook.js
+function hook(params) {
+	// params 是剪贴板内容
+    // bark
+    const url = `https://api.day.app/your_key/${params}`
+    return get(url)
+    // post(url,body)
+}
+```
+
+function hook(params) {
+    // bark
+    const url = 'https://api.day.app/your_key/' + params;
+    get(url);
+    // post(url, body);
+}
+
+
 ## 常见问题
 
 -   电脑无法接收手机剪切板，需要配置电脑防火墙（教程待补充）

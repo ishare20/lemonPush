@@ -246,14 +246,15 @@ func getHookScript() string {
 		function hook(params) {
 			// bark
 			const url = 'https://api.day.app/your_key/' + params;
-			get(url);
-			// post(url, body);
+			return get(url);
+			// else
+			// return post(url, body);
 		}
 		`
 		// 创建文件并写入默认配置
 		jsFile, err := os.OpenFile(jsPath, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
-			log.Fatal("无法创建 JavaScript 文件:", err)
+			log.Print("无法创建 JavaScript 文件:", err)
 
 		}
 		defer jsFile.Close()
