@@ -55,13 +55,6 @@ const getClipboard = async () => {
     showToast('Copied to clipboard');
 };
 
-// const unsecuredReadClipboard = () => {
-//     const redirectUrl = `${window.location.protocol}//${window.location.host}/webui/index.html`;
-//     const replaceUrl = `https://clipboard.1995kaikai.workers.dev/?redirectUrl=${encodeURIComponent(
-//         redirectUrl,
-//     )}`;
-//     window.location.replace(replaceUrl);
-// };
 
 const unsecuredCopyToClipboard = (text: string) => {
     const textArea = document.createElement('textarea');
@@ -169,7 +162,6 @@ window.onload = () => {
 <template>
     <Toast ref="toast" />
     <!-- 左右滚动切换页面 -->
-
     <div v-on:swipe.left="onSwipeLeft" v-if="currentPage === 'clipboard'">
         <Clipboard @set-clipboard="setClipboard" @get-clipboard="getClipboard" />
     </div>

@@ -7,11 +7,17 @@ const onSetClipboard = () => {
 const onGetClipboard = () => {
     emits('getClipboard');
 };
+
+const isIos = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+};
 </script>
 
 <template>
     <div class="max-w-md mx-auto bg-white p-8 rounded shadow-md">
         <h1 class="text-3xl font-bold mb-4">Clipboard</h1>
+
         <div class="flex space-x-4">
             <button
                 @click="onSetClipboard"

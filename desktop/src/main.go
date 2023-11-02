@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime"
 	"net"
@@ -20,38 +22,33 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/dop251/goja"
 	"github.com/mdp/qrterminal/v3"
 )
 
 type LemonConfig struct {
-	Port   string `config:"port"`
-	IP     string `config:"ip"`
-	Folder string `config:"folder"`
-	SSL    string `config:"ssl"`
+	Port        string `config:"port"`
+	IP          string `config:"ip"`
+	Folder      string `config:"folder"`
+	SSL         string `config:"ssl"`
+	ClippedHook string `config:"clippedHook"`
 }
 
 var config LemonConfig
 
+var jsRuntime goja.Runtime
+
+var logFile *os.File
+
 func init() {
-	logFile, err := os.OpenFile("lemon_push.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.SetOutput(logFile)
-
-	loadedConfig, lerr := loadConfigFile("lemon_push.conf")
-	if lerr != nil {
-		log.Panic("加载配置lemon_push.conf失败:", lerr)
-		return
-	}
-
-	config = loadedConfig
-
+	init_log()
+	config = init_config()
 	createFolderIfNotExists(config.Folder)
-
+	init_hook()
 }
 
 func main() {
+	defer closeLogFile() // 确保在程序退出时关闭日志文件
 	// webui
 	wd, _ := os.Getwd()
 	webuiDir := filepath.Join(wd, "webui")
@@ -205,6 +202,74 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
+var lastText string // 用于存储前一次的剪贴板内容
+
+// 监听剪贴板
+func monitorClipboard() {
+
+	jsRuntime.RunString(getHookScript())
+
+	var hookFn func(string) string
+
+	for {
+		text, _ := clipboard.ReadAll()
+
+		if lastText != text {
+			log.Println(timeFormat(), "剪切板内容:", text)
+
+			err := jsRuntime.ExportTo(jsRuntime.Get("hook"), &hookFn)
+			if err != nil {
+				log.Fatal("无法导出 JavaScript 函数:", err)
+				continue
+			}
+			jsResult := hookFn(text)
+			log.Println(timeFormat(), "hook 函数返回:", jsResult)
+			lastText = text
+		}
+		time.Sleep(time.Second * 1)
+	}
+}
+
+func getHookScript() string {
+	// 设置当前目录
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	jsPath := filepath.Join(dir, config.ClippedHook)
+
+	script, err := ioutil.ReadFile(jsPath)
+	if err != nil {
+		log.Print("无法读取 JavaScript 文件:", err)
+		exampleScript := `
+		function hook(params) {
+			// bark
+			const url = 'https://api.day.app/your_key/' + params;
+			get(url);
+			// post(url, body);
+		}
+		`
+		// 创建文件并写入默认配置
+		jsFile, err := os.OpenFile(jsPath, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatal("无法创建 JavaScript 文件:", err)
+
+		}
+		defer jsFile.Close()
+
+		writer := bufio.NewWriter(jsFile)
+		_, err = writer.WriteString(exampleScript)
+		if err != nil {
+			log.Fatal("无法写入 JavaScript 文件:", err)
+		}
+		writer.Flush()
+		log.Println("已创建 JavaScript 文件:", jsPath)
+	}
+
+	return string(script)
+}
+
 func download(w http.ResponseWriter, r *http.Request) {
 	setCORS(w)
 	values := r.URL.Query()
@@ -337,6 +402,71 @@ func setCORS(w http.ResponseWriter) {
 // 时间格式化
 func timeFormat() string {
 	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+func init_log() {
+	logFile, err := os.OpenFile("lemon_push.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mw := io.MultiWriter(os.Stdout, logFile)
+	log.SetOutput(mw)
+}
+
+func closeLogFile() {
+	if logFile != nil {
+		err := logFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func init_config() LemonConfig {
+	loadedConfig, lerr := loadConfigFile("lemon_push.conf")
+	if lerr != nil {
+		log.Fatal("加载配置lemon_push.conf失败:", lerr)
+	}
+
+	return loadedConfig
+}
+
+func init_hook() {
+	if config.ClippedHook != "" {
+		jsRuntime = *goja.New()
+		jsRuntime.Set("get", func(url string) string {
+			resp, err := http.Get(url)
+			if err != nil {
+				return fmt.Sprintf("Error: %s", err)
+			}
+			defer resp.Body.Close()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return fmt.Sprintf("Error reading response: %s", err)
+			}
+
+			return string(body)
+		})
+
+		jsRuntime.Set("post", func(url string, body string) string {
+			resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
+			if err != nil {
+				return fmt.Sprintf("Error: %s", err)
+			}
+			defer resp.Body.Close()
+
+			responseBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return fmt.Sprintf("Error reading response: %s", err)
+			}
+
+			return string(responseBody)
+		})
+
+		go monitorClipboard()
+	}
 }
 
 func loadConfigFile(filename string) (LemonConfig, error) {
