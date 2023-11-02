@@ -12,6 +12,8 @@ const baseUrl = ref(localStorage.getItem('baseUrl') || '');
 
 const client = new LemonPushClient(baseUrl.value);
 
+let clipedText = ref('');
+
 let files = ref([] as string[]);
 
 const getFiles = async () => {
@@ -39,18 +41,27 @@ const download = async (file: string) => {
 };
 
 const setClipboard = async () => {
-    const clipText = await navigator.clipboard.readText();
-    await client.setClipboard(clipText);
+    try {
+        const clipedText = await navigator.clipboard.readText();
+        await client.setClipboard(clipedText);
+    } catch (error: any) {
+        alert(error.message);
+    }
 };
 
 const getClipboard = async () => {
     const clipText = await client.getClipboard();
-    // alert(clipText);
-    // await navigator.clipboard.writeText(clipText);
-    // window.open(`https://clipboard.1995kaikai.workers.dev/?clipboardText=${clipText}`);
     unsecuredCopyToClipboard(clipText);
     showToast('Copied to clipboard');
 };
+
+// const unsecuredReadClipboard = () => {
+//     const redirectUrl = `${window.location.protocol}//${window.location.host}/webui/index.html`;
+//     const replaceUrl = `https://clipboard.1995kaikai.workers.dev/?redirectUrl=${encodeURIComponent(
+//         redirectUrl,
+//     )}`;
+//     window.location.replace(replaceUrl);
+// };
 
 const unsecuredCopyToClipboard = (text: string) => {
     const textArea = document.createElement('textarea');
@@ -116,6 +127,18 @@ const showToast = (message: string) => {
     toast.value.showToast(message);
 };
 
+const getQueryVariable = (variable: string) => {
+    var query = window.location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (pair[0] == variable) {
+            return pair[1];
+        }
+    }
+    return false;
+};
+
 onMounted(async () => {
     if (!baseUrl.value) {
         baseUrl.value = inputBaseUrl('Please input baseUrl:');
@@ -136,6 +159,11 @@ onUnmounted(() => {
     window.removeEventListener('touchstart', handleTouchStart);
     window.removeEventListener('touchend', handleTouchEnd);
 });
+
+window.onload = () => {
+    clipedText.value = getQueryVariable('clipedText') || '';
+    console.log(clipedText.value);
+};
 </script>
 
 <template>
@@ -149,15 +177,6 @@ onUnmounted(() => {
         <FileList :files="files" @download="download" />
     </div>
     <div v-else-if="currentPage === 'upload'" class="p-4 border rounded">
-        <!-- <h1 class="text-2xl mb-4">Upload</h1>
-        <input type="file" ref="fileInput" style="display: none" @change="handleFileUpload" />
-        <label
-            for="fileInput"
-            @click="openFileInput"
-            class="bg-blue-500 text-white py-2 px-4 rounded cursor-pointer"
-            >Choose File</label
-        >
-        <br /> -->
         <Upload
             ref="upload"
             @handle-file-upload="handleFileUpload"

@@ -64,12 +64,7 @@ export class LemonPushClient implements lemonPush {
     }
 
     async setClipboard(text: string): Promise<void> {
-        const { status } = await axios.get(`${this.baseUrl}/set_clipboard?text=${text}`);
-        if (this.isOk(status)) {
-            alert('ok');
-        } else {
-            alert('fail');
-        }
+        await axios.get(`${this.baseUrl}/set_clipboard?text=${text}`);
     }
 
     async getClipboard(): Promise<string> {

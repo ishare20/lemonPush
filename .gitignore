@@ -20,3 +20,5 @@
 node_modules
 dist
 .vscode
+lemon_push.log
+_lemon_
