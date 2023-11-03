@@ -17,3 +17,8 @@
 /desktop/dist
 /docs/node_modules
 /docs/deploy.sh
+node_modules
+dist
+.vscode
+lemon_push.log
+_lemon_

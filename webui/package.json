@@ -1,0 +1,26 @@
+{
+    "name": "lemon-webui",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "repository": "https://github.com/bestk/lemon-webui.git",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc && vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "axios": "^1.6.0",
+        "vue": "^3.3.4"
+    },
+    "devDependencies": {
+        "@types/node": "^20.8.9",
+        "@vitejs/plugin-vue": "^4.2.3",
+        "autoprefixer": "^10.4.16",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.3.5",
+        "typescript": "^5.0.2",
+        "vite": "^4.4.5",
+        "vue-tsc": "^1.8.5"
+    }
+}
