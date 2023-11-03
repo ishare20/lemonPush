@@ -2,11 +2,9 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime"
 	"net"
@@ -24,6 +22,9 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/dop251/goja"
 	"github.com/mdp/qrterminal/v3"
+	mylogger "net.blt/lemon_push/log"
+	"net.blt/lemon_push/utils"
+	"net.blt/lemon_push/utils/js"
 )
 
 type LemonConfig struct {
@@ -34,21 +35,22 @@ type LemonConfig struct {
 	ClippedHook string `config:"clippedHook"`
 }
 
+var logger *log.Logger
+
 var config LemonConfig
 
 var jsRuntime goja.Runtime
 
-var logFile *os.File
-
 func init() {
-	init_log()
+	mylogger.InitLog()
+	logger = mylogger.GetLogger()
 	config = init_config()
 	createFolderIfNotExists(config.Folder)
 	init_hook()
 }
 
 func main() {
-	defer closeLogFile() // 确保在程序退出时关闭日志文件
+	defer mylogger.CloseLogFile() // 确保在程序退出时关闭日志文件
 	// webui
 	wd, _ := os.Getwd()
 	webuiDir := filepath.Join(wd, "webui")
@@ -60,17 +62,18 @@ func main() {
 	http.HandleFunc("/download", download)
 	http.HandleFunc("/upload", upload)
 	http.HandleFunc("/list", list)
+	http.HandleFunc("/files", getFiles)
 
-	fmt.Println(timeFormat(), "  服务端监听端口:", config.Port)
+	fmt.Println("  服务端监听端口:", config.Port)
 
 	if config.IP == "" {
 		localIPs := getLocalIP()
-		fmt.Println(timeFormat(), "  本机IP列表:")
+		fmt.Println("  本机IP列表:")
 		for i, ip := range localIPs {
 			fmt.Printf("%d. %s\n", i+1, ip)
 		}
 		for {
-			fmt.Print("输入序号选择一个IP地址(仅用于生成二维码): ")
+			fmt.Println("输入序号选择一个IP地址(仅用于生成二维码): ")
 			reader := bufio.NewReader(os.Stdin)
 			input, _ := reader.ReadString('\n')
 			input = strings.TrimSpace(input)
@@ -86,10 +89,10 @@ func main() {
 	url := fmt.Sprintf("%s:%s", config.IP, config.Port)
 	// fixed bug: https://github.com/golang/go/issues/32350#issuecomment-1128475902
 	_ = mime.AddExtensionType(".js", "text/javascript")
-	fmt.Println(timeFormat(), "  选择的IP地址:", config.IP, " 请使用App扫码连接")
+	fmt.Println("选择的IP地址:", config.IP, " 请使用App扫码连接")
 	qRCode2ConsoleWithUrl(url)
-	fmt.Println(timeFormat(), "  服务端已启动")
-	fmt.Printf("%s   weui地址: http(s)://%s/webui", timeFormat(), url)
+	fmt.Println("服务端已启动")
+	fmt.Printf("weui地址: http(s)://%s/webui", url)
 
 	var serverType string
 	var err error
@@ -98,7 +101,7 @@ func main() {
 		// 判断证书是否存在不存在生成
 		_, certErr := os.Stat("server.pem")
 		if os.IsNotExist(certErr) {
-			log.Println(timeFormat(), "  证书不存在，正在生成证书...")
+			logger.Println("  证书不存在，正在生成证书...")
 			gen()
 		}
 		err = http.ListenAndServeTLS(url, "server.pem", "server.key", nil)
@@ -109,9 +112,9 @@ func main() {
 	}
 
 	if err != nil {
-		log.Panic("Error starting", serverType, "server:", err)
+		logger.Panic("Error starting", serverType, "server:", err)
 	} else {
-		log.Println(timeFormat(), "  服务端已启动，使用", serverType)
+		logger.Println("  服务端已启动，使用", serverType)
 	}
 
 }
@@ -130,13 +133,13 @@ func getLocalIP() []string {
 	var ips []string
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 	}
 	for _, address := range addrs {
 		// 检查ip地址判断是否回环地址
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
-				// log.Println(timeFormat(), "  本机IP:", ipnet.IP.String())
+				// logger.Println( "  本机IP:", ipnet.IP.String())
 				ips = append(ips, ipnet.IP.String())
 			}
 		}
@@ -165,12 +168,12 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 	code := values.Get("text")
 	clipboard.WriteAll(code)
-	log.Println("客户端 " + r.RemoteAddr + " 设置剪切板：" + code)
+	logger.Println("客户端 " + r.RemoteAddr + " 设置剪切板：" + code)
 	p := regexp.MustCompile(`https?://[^\s]+/[^/]+`)
 	if p.MatchString(code) {
 		matches := p.FindAllString(code, -1)
 		for _, match := range matches {
-			log.Printf("%s  启动浏览器打开链接：%s\n", timeFormat(), match)
+			logger.Printf("%s  启动浏览器打开链接：%s\n", match)
 			openBrowser(match)
 		}
 	}
@@ -192,7 +195,7 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	resp := make(map[string]string)
 	text, _ := clipboard.ReadAll()
-	log.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + text)
+	logger.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + text)
 	resp["data"] = text
 	resp["code"] = "0"
 	jsonResp, err := json.Marshal(resp)
@@ -202,73 +205,71 @@ func getClipboard(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResp)
 }
 
-var lastText string // 用于存储前一次的剪贴板内容
+func getFiles(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
+	resp := make(map[string]interface{})
+	filenames, err := utils.Clipboard().Files()
+
+	if err != nil {
+		logger.Println(err)
+		resp["code"] = "1"
+		resp["msg"] = err.Error()
+	} else {
+		resp["data"] = filenames
+		resp["code"] = "0"
+	}
+
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		return
+	}
+	w.Write(jsonResp)
+}
+
+var lastText string    // 用于存储前一次的剪贴板内容
+var lastFiles []string // 用于存储前一次的剪贴板内容
 
 // 监听剪贴板
 func monitorClipboard() {
 
-	jsRuntime.RunString(getHookScript())
+	jsRuntime.RunString(js.GetScript(config.ClippedHook))
 
-	var hookFn func(string) string
+	var hookFn func([]string, string) string
 
 	for {
-		text, _ := clipboard.ReadAll()
-
-		if lastText != text {
-			log.Println(timeFormat(), "剪切板内容:", text)
-
-			err := jsRuntime.ExportTo(jsRuntime.Get("hook"), &hookFn)
-			if err != nil {
-				log.Fatal("无法导出 JavaScript 函数:", err)
-				continue
-			}
-			jsResult := hookFn(text)
-			log.Println(timeFormat(), "hook 函数返回:", jsResult)
-			lastText = text
+		files, err := utils.Clipboard().Files()
+		if err != nil {
+			fmt.Println("无法获取剪贴板文件，尝试读取剪贴板文字", err)
+			time.Sleep(time.Second * 1)
 		}
+
+		var text string
+		if len(files) == 0 {
+			text, _ = clipboard.ReadAll()
+		}
+
+		if lastText == text && reflect.DeepEqual(lastFiles, files) {
+			time.Sleep(time.Second * 1)
+			continue
+		}
+
+		logger.Println("剪切板内容:", text, files)
+
+		err = jsRuntime.ExportTo(jsRuntime.Get("hook"), &hookFn)
+		if err != nil {
+			log.Fatal("无法导出 JavaScript 函数:", err)
+			time.Sleep(time.Second * 1)
+			continue
+		}
+
+		jsResult := hookFn(files, text)
+		logger.Println("hook 函数返回:", jsResult)
+
+		lastText = text
+		lastFiles = files
+
 		time.Sleep(time.Second * 1)
 	}
-}
-
-func getHookScript() string {
-	// 设置当前目录
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	jsPath := filepath.Join(dir, config.ClippedHook)
-
-	script, err := ioutil.ReadFile(jsPath)
-	if err != nil {
-		log.Print("无法读取 JavaScript 文件:", err)
-		exampleScript := `
-		function hook(params) {
-			// bark
-			const url = 'https://api.day.app/your_key/' + params;
-			return get(url);
-			// else
-			// return post(url, body);
-		}
-		`
-		// 创建文件并写入默认配置
-		jsFile, err := os.OpenFile(jsPath, os.O_RDWR|os.O_CREATE, 0644)
-		if err != nil {
-			log.Print("无法创建 JavaScript 文件:", err)
-
-		}
-		defer jsFile.Close()
-
-		writer := bufio.NewWriter(jsFile)
-		_, err = writer.WriteString(exampleScript)
-		if err != nil {
-			log.Fatal("无法写入 JavaScript 文件:", err)
-		}
-		writer.Flush()
-		log.Println("已创建 JavaScript 文件:", jsPath)
-	}
-
-	return string(script)
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
@@ -277,11 +278,11 @@ func download(w http.ResponseWriter, r *http.Request) {
 	fileName := values.Get("filename")
 	folderPath := config.Folder
 
-	log.Println("客户端 " + r.RemoteAddr + " 下载文件：" + fileName)
+	logger.Println("客户端 " + r.RemoteAddr + " 下载文件：" + fileName)
 	separator := string(filepath.Separator)
 	file, err := os.Open(folderPath + separator + fileName)
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		http.Error(w, "文件未找到", http.StatusNotFound)
 		return
 	}
@@ -289,7 +290,7 @@ func download(w http.ResponseWriter, r *http.Request) {
 
 	fileInfo, err := file.Stat()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		http.Error(w, "文件信息无法获取", http.StatusInternalServerError)
 		return
 	}
@@ -300,7 +301,7 @@ func download(w http.ResponseWriter, r *http.Request) {
 
 	_, copyErr := io.Copy(w, file)
 	if copyErr != nil {
-		log.Println(copyErr)
+		logger.Println(copyErr)
 		http.Error(w, "文件无法下载", http.StatusInternalServerError)
 		return
 	}
@@ -308,23 +309,23 @@ func download(w http.ResponseWriter, r *http.Request) {
 
 func upload(w http.ResponseWriter, r *http.Request) {
 	setCORS(w)
-	log.Println("客户端 " + r.RemoteAddr + " 上传文件")
+	logger.Println("客户端 " + r.RemoteAddr + " 上传文件")
 	r.ParseMultipartForm(32 << 20)
 	file, handler, err := r.FormFile("file")
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 	defer file.Close()
-	log.Println("文件名: " + handler.Filename)
-	log.Println("文件大小: ", handler.Size)
-	log.Println("MIME类型: " + handler.Header.Get("Content-Type"))
+	logger.Println("文件名: " + handler.Filename)
+	logger.Println("文件大小: ", handler.Size)
+	logger.Println("MIME类型: " + handler.Header.Get("Content-Type"))
 	// 创建一个目标文件
 	separator := string(filepath.Separator)
 	targetFile, err := os.Create(config.Folder + separator + handler.Filename)
-	log.Println("文件路径: " + targetFile.Name())
+	logger.Println("文件路径: " + targetFile.Name())
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 	defer targetFile.Close()
@@ -332,7 +333,7 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	// 将上传的文件内容拷贝到目标文件
 	_, copyErr := io.Copy(targetFile, file)
 	if copyErr != nil {
-		log.Println(copyErr)
+		logger.Println(copyErr)
 		return
 	}
 
@@ -367,9 +368,9 @@ func createFolderIfNotExists(folderPath string) error {
 		if errDir != nil {
 			return errDir
 		}
-		log.Println("文件夹不存在，已创建:", folderPath)
+		logger.Println("文件夹不存在，已创建:", folderPath)
 	} else {
-		log.Println("文件夹已存在:", folderPath)
+		logger.Println("文件夹已存在:", folderPath)
 	}
 	return nil
 }
@@ -405,25 +406,6 @@ func timeFormat() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
-func init_log() {
-	logFile, err := os.OpenFile("lemon_push.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mw := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(mw)
-}
-
-func closeLogFile() {
-	if logFile != nil {
-		err := logFile.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
 func init_config() LemonConfig {
 	loadedConfig, lerr := loadConfigFile("lemon_push.conf")
 	if lerr != nil {
@@ -436,35 +418,9 @@ func init_config() LemonConfig {
 func init_hook() {
 	if config.ClippedHook != "" {
 		jsRuntime = *goja.New()
-		jsRuntime.Set("get", func(url string) string {
-			resp, err := http.Get(url)
-			if err != nil {
-				return fmt.Sprintf("Error: %s", err)
-			}
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return fmt.Sprintf("Error reading response: %s", err)
-			}
-
-			return string(body)
-		})
-
-		jsRuntime.Set("post", func(url string, body string) string {
-			resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
-			if err != nil {
-				return fmt.Sprintf("Error: %s", err)
-			}
-			defer resp.Body.Close()
-
-			responseBody, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return fmt.Sprintf("Error reading response: %s", err)
-			}
-
-			return string(responseBody)
-		})
+		jsRuntime.Set("get", js.Get)
+		jsRuntime.Set("post", js.Post)
+		jsRuntime.Set("upload", js.Upload)
 
 		go monitorClipboard()
 	}
@@ -483,7 +439,7 @@ func loadConfigFile(filename string) (LemonConfig, error) {
 		// 文件不存在，使用默认配置并创建文件
 		config := LemonConfig{
 			Port:   "14756",
-			IP:     "",
+			IP:     "0.0.0.0",
 			Folder: "./_lemon_",
 			SSL:    "off",
 		}
