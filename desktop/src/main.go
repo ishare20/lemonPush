@@ -16,12 +16,13 @@ import (
 	"strings"
 	"time"
 
+	qrcodeTerminal "github.com/Baozisoftware/qrcode-terminal-go"
 	"github.com/atotto/clipboard"
-	"github.com/mdp/qrterminal/v3"
 )
 
 var dt = time.Now()
 var folder = "./_lemon_"
+var auto_open_url = "open"
 
 func main() {
 	http.HandleFunc("/set_clipboard", setClipboard)
@@ -33,11 +34,15 @@ func main() {
 		fmt.Println("加载配置lemon_push.conf失败:", lerr)
 		return
 	}
-	port := ":" + config["port"] // 监听端口
-	selectedIP := config["ip"]   // ip地址
-	folder = config["folder"]    // 文件夹
+	port := ":" + config["port"]            // 监听端口
+	selectedIP := config["ip"]              // ip地址
+	folder = config["folder"]               // 文件夹
+	auto_open_url = config["auto_open_url"] // 自动使用默认浏览器打开url
 	if folder != "" {
 		createFolderIfNotExists(folder)
+	}
+	if auto_open_url == "" { //存在配置但没有字段值时
+		auto_open_url = "open"
 	}
 
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端监听端口:", config["port"])
@@ -64,7 +69,7 @@ func main() {
 
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  选择的IP地址:", selectedIP, " 请使用App扫码连接")
 	url := selectedIP + port
-	qRCode2ConsoleWithUrl(url)
+	qRCode2ConsoleWithUrlNew(url)
 	fmt.Println(dt.Format("2006-01-02 15:04:05"), "  服务端已启动")
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
@@ -73,14 +78,9 @@ func main() {
 
 }
 
-func qRCode2ConsoleWithUrl(url string) {
-	config := qrterminal.Config{
-		Level:     qrterminal.L,
-		BlackChar: qrterminal.BLACK,
-		WhiteChar: qrterminal.WHITE,
-		Writer:    os.Stdout,
-	}
-	qrterminal.GenerateWithConfig(url, config)
+func qRCode2ConsoleWithUrlNew(url string) {
+	obj := qrcodeTerminal.New()
+	obj.Get(url).Print()
 }
 
 func getLocalIP() []string {
@@ -121,12 +121,14 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 	code := values.Get("text")
 	clipboard.WriteAll(code)
 	fmt.Println("客户端 " + r.RemoteAddr + " 设置剪切板：" + code)
-	p := regexp.MustCompile(`https?://[^\s]+/[^/]+`)
-	if p.MatchString(code) {
-		matches := p.FindAllString(code, -1)
-		for _, match := range matches {
-			fmt.Printf("%s  启动浏览器打开链接：%s\n", dt.Format("2006-01-02 15:04:05"), match)
-			openBrowser(match)
+	if auto_open_url == "open" {
+		p := regexp.MustCompile(`https?://[^\s]+/[^/]+`)
+		if p.MatchString(code) {
+			matches := p.FindAllString(code, -1)
+			for _, match := range matches {
+				fmt.Printf("%s  启动浏览器打开链接：%s\n", dt.Format("2006-01-02 15:04:05"), match)
+				openBrowser(match)
+			}
 		}
 	}
 
@@ -259,6 +261,7 @@ func loadConfigFile(filename string) (map[string]string, error) {
 		config["port"] = "14756"
 		config["folder"] = "./_lemon_"
 		config["ip"] = ""
+		config["auto_open_url"] = "open"
 
 		// 创建文件并写入默认配置
 		file, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)

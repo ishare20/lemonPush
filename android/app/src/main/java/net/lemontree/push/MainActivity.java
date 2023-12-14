@@ -39,8 +39,10 @@ import net.lemontree.push.model.PCClient;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.Socket;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -250,12 +252,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static boolean sendToPC(String url, String content) {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(url + "?text=" + content)
-                .build();
-        Call call = client.newCall(request);
         try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url + "?text=" + URLEncoder.encode(content, "UTF-8"))
+                    .build();
+            Call call = client.newCall(request);
             Response response = call.execute();
             if (response.isSuccessful()) {
                 return true;
