@@ -17,3 +17,5 @@
 /desktop/dist
 /docs/node_modules
 /docs/deploy.sh
+/desktop_gui/frontend/.idea
+/desktop_gui/.idea
