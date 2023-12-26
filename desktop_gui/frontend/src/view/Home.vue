@@ -27,7 +27,7 @@
           </n-popover>
         </div>
 
-        <n-button type="warning" style="margin-left: 16px;" @click="hideApp">
+        <n-button type="warning" style="margin-left: 16px;" @click="hideApp" v-if="!isDarwin">
           隐藏到托盘图标
         </n-button>
 
@@ -88,6 +88,7 @@ import * as runtime from '../../wailsjs/runtime/runtime';
 import QrcodeVue from 'qrcode.vue'
 import { useStore } from 'vuex';
 const showModal = ref(false)
+const isDarwin = ref(false)
 const showPortModal = ref(false)
 const bodyStyle = {
   width: '600px'
@@ -102,6 +103,11 @@ const config = computed(() => store.state.config)
 const hideApp = () => {
   runtime.WindowHide()
 }
+runtime.Environment().then(res=>{
+  if(res.platform === 'darwin'){
+    isDarwin.value =true
+  }
+})
 
 const status = computed(() => store.state.status);
 

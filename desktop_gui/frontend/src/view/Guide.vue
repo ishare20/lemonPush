@@ -5,7 +5,7 @@
                 下载柠檬Push安卓App，安装完成后扫【连接】功能中生成的二维码匹配即可使用
                 <br />
                 <br />
-                App下载发布页<br /><n-a href="https://sibtools.app/lemon_push/docs/download" target="_blank">
+                App下载发布页<br /><n-a @click="openUrl('https://sibtools.app/lemon_push/docs/download')"  >
                     https://sibtools.app/lemon_push/docs/download
                 </n-a>
             </n-tab-pane>
@@ -48,6 +48,7 @@
 import { ref } from 'vue'
 import MarkdownIt from 'markdown-it';
 import QrcodeVue from 'qrcode.vue'
+import * as runtime from '../../wailsjs/runtime/runtime';
 const qrcode_text = ref('https://sibtools.app/lemon_push/docs/download')
 const showModal = ref(false)
 const markdown = new MarkdownIt()
@@ -100,5 +101,8 @@ const bodyStyle = {
 }
 const closeQrCodeDialog = () => {
     showModal.value = false
+}
+const openUrl = (url: string) => {
+    runtime.BrowserOpenURL(url)
 }
 </script>

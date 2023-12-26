@@ -12,10 +12,7 @@ import (
 var assets embed.FS
 
 func main() {
-	//systray.Run(onReady, onExit)
-	// Create an instance of the app structure
 	app := NewApp()
-	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "柠檬Push",
 		Width:  1024,
@@ -29,9 +26,7 @@ func main() {
 			app,
 		},
 	})
-
 	if err != nil {
 		println("Error:", err.Error())
 	}
-
 }

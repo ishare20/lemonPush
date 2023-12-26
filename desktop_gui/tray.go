@@ -15,11 +15,14 @@ type Tray struct {
 }
 
 func NewTray() *Tray {
+
 	return &Tray{}
 }
 
 func init() {
 	systray.Register(instance.onReady, nil)
+	// systray.Run(instance.onReady, nil)
+	// systray.Run(onReady, nil)
 }
 
 func getTray(ctx context.Context) Tray {
