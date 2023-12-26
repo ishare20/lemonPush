@@ -6,9 +6,11 @@
 LemonPush is an efficient tool for pushing text from your mobile device to your computer's clipboard under the same WiFi environment. It supports Android and iOS on the mobile side, and Windows, Mac, and Linux platforms on the computer side.
 
 ## 配置教程
-电脑双击启动程序后会显示电脑IP，手机安装柠檬Push App后，点击设置电脑端显示IP，可能会出现多个IP，使用局域网所在网络的IP，一般192开头，扫码连接或填写电脑IP后点击推送剪切板即可获取剪切板并推送至电脑端
+双击启动柠檬Push应用，Android端安装柠檬Push App，iOS端使用快捷指令，电脑端柠檬Push点击生成二维码，Android手机扫码匹配即可使用，iOS端修改快捷指令的IP为电脑IP即可使用
 
-程序首次运行会创建默认配置文件lemon_push.conf,如出现端口冲突可在配置文件修改端口号后重启程序
+生成二维码时，电脑可能会出现多个IP，使用局域网所在网络的IP，一般192开头，扫码连接或填写电脑IP后点击推送剪切板即可获取剪切板并推送至电脑端
+
+如出现端口冲突可修改端口号后重启程序
 
 ## 接口说明
 ### 写入电脑剪切板
@@ -50,10 +52,9 @@ LemonPush is an efficient tool for pushing text from your mobile device to your 
 `curl --location --request GET 'http://localhost:14756/download?filename=__UNI__F0B72F8_0809143049.apk'`
 
 ## 常见问题
-- 电脑无法接收手机剪切板，需要配置电脑防火墙（教程待补充）
-- Mac电脑双击无法运行，需配置文件权限，运行命令`chmod u+x 程序文件名`
-- 双击程序运行会展示控制台并输出日志，如不需要控制台，可后台运行，后台运行需在配置文件lemon.conf中填写电脑ip(ip默认为空，需首次在控制台运行生成一份默认配置文件)
-Windows运行`Start-Process -WindowStyle hidden -FilePath "程序"`，Mac运行`nohup 程序 &`
+- 电脑无法接收手机剪切板，需要配置电脑防火墙允许应用通过
+- Mac系统暂不支持托盘图标
+- Linux暂无图形界面版本
 
 ## 开发背景
 日常手机与电脑互发消息频率较多，使用微信或QQ来发消息步骤略显繁琐
@@ -94,6 +95,9 @@ Windows运行`Start-Process -WindowStyle hidden -FilePath "程序"`，Mac运行`
 电报群
 
 [Telegram](https://t.me/+ZVIwHSBOg1o5NzFl)
+
+微信订阅号【lemonTree杂货铺】
+![wx](https://ishare20.net/files/images/wxdy.png)
 
 ## 支持开发者
 

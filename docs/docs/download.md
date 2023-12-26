@@ -6,6 +6,12 @@ sidebar_position: 2
 
 ## 123 云盘汇总下载链接
 
+### v1.0.5.1
+
+*2023.12.26*
+
+[https://www.123pan.com/s/y4HrVv-esUlA.html](https://www.123pan.com/s/y4HrVv-esUlA.html)
+
 ### v1.0.4
 
 *2023.12.14*
