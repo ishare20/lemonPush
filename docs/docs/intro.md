@@ -13,6 +13,8 @@ sidebar_position: 1
 - 电脑端提供支持下载、上传文件接口
 - App支持扫码连接，无需手动输入
 
+![](https://sibtools.app/lemon_push/img/gui_v1.0.5.1.png)
+
 ![lemonpush](https://sibtools.app/lemon_push/img/lemonpush.jpg)
 
 ## [下载地址(包含iOS快捷指令)](https://sibtools.app/lemon_push/docs/download)
@@ -109,6 +111,7 @@ sidebar_position: 1
 [Telegram](https://t.me/+ZVIwHSBOg1o5NzFl)
 
 微信订阅号【lemonTree杂货铺】
+
 ![wx](https://ishare20.net/files/images/wxdy.png)
 
 ## 支持开发者

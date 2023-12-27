@@ -3,6 +3,11 @@ sidebar_position: 2
 ---
 
 # 应用下载
+:::tip
+
+v1.0.5.1版本电脑端支持Windows和Mac的图形界面，v1.0.5.1版本之前均为命令行版本
+
+:::
 
 ## 123 云盘汇总下载链接
 
@@ -18,6 +23,10 @@ sidebar_position: 2
 
 [https://www.123pan.com/s/y4HrVv-fYUlA.html](https://www.123pan.com/s/y4HrVv-fYUlA.html)
 
+<details>
+  <summary>更早的版本</summary>
+  <div>
+
 ### v1.0.3
 
 [https://www.123pan.com/s/y4HrVv-xtulA.html](https://www.123pan.com/s/y4HrVv-xtulA.html)
@@ -29,6 +38,12 @@ sidebar_position: 2
 ### v1.0.1
 
 [https://www.123pan.com/s/y4HrVv-3RKlA.html](https://www.123pan.com/s/y4HrVv-3RKlA.html)
+
+  </div>
+</details>
+
+## [Github Release 下载](https://github.com/ishare20/lemonPush/releases)
+
 
 ## Android
 
@@ -51,6 +66,20 @@ sidebar_position: 2
 文件名称：lemon_push_v 版本号\_windows_amd64.exe
 
 ## Mac
+:::tip
+
+v1.0.5.1版本下载darwin_universal即可。Mac系统打开柠檬Push.app时提示无法打开，
+需在设置-隐私与安全性-安全性，选择仍要打开。参考https://support.apple.com/zh-cn/HT202491
+
+![t2](https://sibtools.app/lemon_push/img/t2.png)
+
+:::
+
+
+
+### universal
+
+文件名称：lemon_push_v 版本号_darwin_universal
 
 ### ARM
 
@@ -58,7 +87,7 @@ sidebar_position: 2
 
 ### x86_64
 
-文件名称：lemon_push_v102_darwin_amd64
+文件名称：lemon_push_v 版本号_darwin_amd64
 
 ## Linux
 

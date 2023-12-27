@@ -5,6 +5,12 @@
 
 LemonPush is an efficient tool for pushing text from your mobile device to your computer's clipboard under the same WiFi environment. It supports Android and iOS on the mobile side, and Windows, Mac, and Linux platforms on the computer side.
 
+![](https://sibtools.app/lemon_push/img/gui_v1.0.5.1.png)
+
+![lemonpush](https://sibtools.app/lemon_push/img/lemonpush.jpg)
+
+## [下载地址(包含iOS快捷指令)](https://sibtools.app/lemon_push/docs/download)
+
 ## 配置教程
 双击启动柠檬Push应用，Android端安装柠檬Push App，iOS端使用快捷指令，电脑端柠檬Push点击生成二维码，Android手机扫码匹配即可使用，iOS端修改快捷指令的IP为电脑IP即可使用
 
@@ -97,6 +103,7 @@ LemonPush is an efficient tool for pushing text from your mobile device to your 
 [Telegram](https://t.me/+ZVIwHSBOg1o5NzFl)
 
 微信订阅号【lemonTree杂货铺】
+
 ![wx](https://ishare20.net/files/images/wxdy.png)
 
 ## 支持开发者
