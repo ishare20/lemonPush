@@ -1,4 +1,4 @@
-set APP_NAME=lemon_push
+set APP_NAME=lemon_push_cli
 set APP_VERSION=v1052
 cd ./src
 :: 编译为 Windows 可执行文件
