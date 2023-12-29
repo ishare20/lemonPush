@@ -1,1 +1,0 @@
-wails build -platform windows/amd64

@@ -1,1 +1,0 @@
-wails build -platform darwin/arm64

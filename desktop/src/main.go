@@ -18,6 +18,7 @@ import (
 
 	qrcodeTerminal "github.com/Baozisoftware/qrcode-terminal-go"
 	"github.com/atotto/clipboard"
+	xClipboard "golang.design/x/clipboard"
 )
 
 var dt = time.Now()
@@ -147,9 +148,10 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 func getClipboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	resp := make(map[string]string)
-	text, _ := clipboard.ReadAll()
-	fmt.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + text)
-	resp["data"] = text
+	//text, _ := clipboard.ReadAll()
+	text := xClipboard.Read(xClipboard.FmtText)
+	fmt.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + string(text))
+	resp["data"] = string(text)
 	resp["code"] = "0"
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {

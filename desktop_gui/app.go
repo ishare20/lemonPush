@@ -17,6 +17,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	xClipboard "golang.design/x/clipboard"
 )
 
 var dt = time.Now()
@@ -52,6 +53,10 @@ func (a *App) startup(ctx context.Context) {
 	getTray(ctx)
 	a.ctx = ctx
 	actx = ctx
+	err := xClipboard.Init()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Greet returns a greeting for the given name
@@ -179,9 +184,11 @@ func setClipboard(w http.ResponseWriter, r *http.Request) {
 func getClipboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	resp := make(map[string]string)
-	text, _ := clipboard.ReadAll()
-	fmt.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + text)
-	resp["data"] = text
+	//text, _ := clipboard.ReadAll()
+	text := xClipboard.Read(xClipboard.FmtText)
+	fmt.Println("客户端 " + r.RemoteAddr + " 获取剪切板：" + string(text))
+	//wruntime.EventsEmit(actx, "showLogs", string(text))
+	resp["data"] = string(text)
 	resp["code"] = "0"
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
