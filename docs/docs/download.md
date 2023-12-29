@@ -9,7 +9,7 @@ v1.0.5.1版本电脑端支持Windows和Mac的图形界面，v1.0.5.1版本之前
 
 :::
 
-## 123 云盘汇总下载链接
+## 123网盘汇总下载链接
 
 ### v1.0.5.1
 
@@ -17,15 +17,15 @@ v1.0.5.1版本电脑端支持Windows和Mac的图形界面，v1.0.5.1版本之前
 
 [https://www.123pan.com/s/y4HrVv-esUlA.html](https://www.123pan.com/s/y4HrVv-esUlA.html)
 
+<details>
+  <summary>更早的版本</summary>
+  <div>
+
 ### v1.0.4
 
 *2023.12.14*
 
 [https://www.123pan.com/s/y4HrVv-fYUlA.html](https://www.123pan.com/s/y4HrVv-fYUlA.html)
-
-<details>
-  <summary>更早的版本</summary>
-  <div>
 
 ### v1.0.3
 
@@ -92,5 +92,3 @@ v1.0.5.1版本下载darwin_universal即可。Mac系统打开柠檬Push.app时提
 ## Linux
 
 文件名称：lemon_push_v 版本号\_linux_amd64
-
-电脑端应用只编译了 4 个版本，需要更多平台的程序可自行下载源码或联系开发者
