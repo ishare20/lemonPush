@@ -1,6 +1,6 @@
 <template>
     <div>
-        <n-h3>柠檬Push v1.0.5.1</n-h3>
+        <n-h3>柠檬Push v1.0.5.2</n-h3>
         <n-collapse :default-expanded-names="['1']">
             <n-collapse-item title="软件简介" name="1">
                 <div>同一WiFi环境下手机高效推送文本到电脑剪切板的工具，移动端支持Android、iOS，电脑端支持Windows、Mac、Linux平台</div>

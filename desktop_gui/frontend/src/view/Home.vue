@@ -103,14 +103,13 @@ const config = computed(() => store.state.config)
 const hideApp = () => {
   runtime.WindowHide()
 }
-runtime.Environment().then(res=>{
-  if(res.platform === 'darwin'){
-    isDarwin.value =true
+runtime.Environment().then(res => {
+  if (res.platform === 'darwin') {
+    isDarwin.value = true
   }
 })
 
 const status = computed(() => store.state.status);
-
 const options = ref<any[]>([]);
 const qrcode_text = ref('柠檬Push，请先选择IP')
 const show_qrcode = ref(false)

@@ -1,5 +1,5 @@
 set APP_NAME=lemon_push
-set APP_VERSION=v104
+set APP_VERSION=v1052
 cd ./src
 :: 编译为 Windows 可执行文件
 set GOOS=windows
