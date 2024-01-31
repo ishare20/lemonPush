@@ -48,8 +48,8 @@ const config = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-         // editUrl:
-           // 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          // editUrl:
+          // 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         blog: {
           showReadingTime: true,
@@ -98,11 +98,20 @@ const config = {
                 label: '教程',
                 to: '/docs/intro',
               },
+              {
+                label: '路线图',
+                href: 'https://support.qq.com/products/405982/roadmap',
+              },
+
             ],
           },
           {
             title: '反馈',
             items: [
+              {
+                label: '兔小槽',
+                href: 'https://support.qq.com/products/405982'
+              },
               {
                 label: 'Telegram',
                 href: 'https://t.me/+ZVIwHSBOg1o5NzFl',
@@ -115,6 +124,10 @@ const config = {
               {
                 label: '小而美的工具们',
                 href: 'https://sibtools.app/',
+              },
+              {
+                label: '微信订阅号',
+                href: 'https://ishare20.net/files/images/wxdy.png',
               },
             ],
           },
