@@ -17,17 +17,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.provider.Settings;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -58,16 +64,21 @@ public class MainActivity extends AppCompatActivity {
     private Button sendBt;
     private Handler handler = new Handler();
     private Button infoTv;
-    private SwitchCompat openAndPushSwitch;
+    private Button autoOperationBtn;
     private SharedPreferences sp;
     private SharedPreferences pcListSp;
     private ClipboardManager clipboard;
     private List<PCClient> pcClientList = new ArrayList<>();
     private Context context;
     private int selectPC = 0;
+    private int autoOperation = 0; // 0: 无操作；1:打开即推送；2：打开即获取；3：悬浮窗点击推送；4：悬浮窗点击获取；
+    private String[] autoOperationItems;
 
     private final int PERMISSION_REQUEST_CAMERA = 104;
     private final int REQUEST_CODE = 105;
+    private static final int REQUEST_CODE_DRAW_OVER_OTHER_APPS_WITH_AUTOOPERATION_3 = 106;
+    private static final int REQUEST_CODE_DRAW_OVER_OTHER_APPS_WITH_AUTOOPERATION_4 = 107;
+
 
     private final String LAST_PC_KEY = "lastPC";
 
@@ -81,16 +92,12 @@ public class MainActivity extends AppCompatActivity {
         JiebaSegmenter.init(getApplicationContext());
         infoTv = findViewById(R.id.info);
         sendBt = findViewById(R.id.send);
-        openAndPushSwitch = findViewById(R.id.open_and_push_switch);
+        autoOperationBtn = findViewById(R.id.auto_operation_button);
         clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         sp = getSharedPreferences("settings", MODE_PRIVATE);
         pcListSp = getSharedPreferences("PCList", MODE_PRIVATE);
         sendBt.setOnClickListener(view -> sendClipboard(getClipboardContent()));
-        openAndPushSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putBoolean("openAndPush", b);
-            editor.apply();
-        });
+
         ((TextView) findViewById(R.id.version)).setText("v" + getVersionName());
         infoTv.setOnClickListener(view -> {
             if (pcClientList.size() > 0) {
@@ -111,6 +118,19 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+
+        autoOperationItems = getResources().getStringArray(R.array.auto_operation_array);
+        autoOperationBtn.setText(autoOperationItems[0]);
+        autoOperationBtn.setOnClickListener(view->{
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
+            alertBuilder.setTitle("请选择自动操作");
+            alertBuilder.setSingleChoiceItems(autoOperationItems, autoOperation, (dialogInterface, which) -> {
+                chooseAutoOperationMode(which);
+                dialogInterface.dismiss();
+            });
+            alertBuilder.create().show();
+        });
+
         findViewById(R.id.get).setOnClickListener(view -> getPCClipboard(pcClientList.get(selectPC)));
         findViewById(R.id.split).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,7 +146,117 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    private void chooseAutoOperationMode(int which){
+        removeFloatWindow();
+        int prevMode = autoOperation;
+        autoOperation = which;
+        autoOperationBtn.setText(autoOperationItems[which]);
+        if(which == 3 || which == 4){
+            if(!chooseFloatWindow(which)){
+                chooseAutoOperationMode(prevMode);
+            }
+        }
+    }
+    private boolean chooseFloatWindow(int which){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            // 如果需要SYSTEM_ALERT_WINDOW权限但尚未授予，则引导用户到设置
 
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("需要特殊权限")
+                .setMessage("为了使用此功能，请允许应用在其他应用上显示")
+                .setPositiveButton("去设置", (dialog, whichone) -> {
+                    // 跳转到设置页面
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(intent, which==3?REQUEST_CODE_DRAW_OVER_OTHER_APPS_WITH_AUTOOPERATION_3:REQUEST_CODE_DRAW_OVER_OTHER_APPS_WITH_AUTOOPERATION_4);
+                })
+                .setNegativeButton("取消", null)
+                .show();
+            return false;
+        } else {
+            // 权限已存在，直接创建悬浮窗
+            createFloatWindow();
+        }
+        return true;
+    }
+    private float floatwindow_initialX;
+    private float floatwindow_initialY;
+    private float floatwindow_initialTouchX;
+    private float floatwindow_initialTouchY;
+    private View floatWindow;
+    private WindowManager windowManager;
+    private boolean floatwindow_isDragging = false;
+    private static final float CLICK_DRAG_TOLERANCE = 10; // 点击时允许的拖动距离
+    private void createFloatWindow() {
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT);
+
+        params.gravity = Gravity.RIGHT | Gravity.BOTTOM;
+        params.x = 50;
+        params.y = 100;
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        floatWindow = inflater.inflate(R.layout.float_window_layout, null);
+        TextView tv = floatWindow.findViewById(R.id.float_tv);
+        tv.setText(autoOperation==3?"推送剪切板":"获取剪切板");
+
+        if(windowManager == null){
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        }
+        windowManager.addView(floatWindow, params);
+
+        // 设置触摸监听以拖动悬浮窗
+        floatWindow.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    floatwindow_initialX = params.x;
+                    floatwindow_initialY = params.y;
+                    floatwindow_initialTouchX = event.getRawX();
+                    floatwindow_initialTouchY = event.getRawY();
+                    floatwindow_isDragging = false;
+                    params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+                    windowManager.updateViewLayout(floatWindow, params);
+                    return true;
+
+                case MotionEvent.ACTION_MOVE:
+                    float dx = event.getRawX() - floatwindow_initialTouchX;
+                    float dy = event.getRawY() - floatwindow_initialTouchY;
+                    if (Math.abs(dx) > CLICK_DRAG_TOLERANCE || Math.abs(dy) > CLICK_DRAG_TOLERANCE) {
+                        floatwindow_isDragging = true;
+                    }
+                    params.x = (int)(floatwindow_initialX - dx);
+                    params.y = (int)(floatwindow_initialY - dy);
+                    windowManager.updateViewLayout(floatWindow, params);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (!floatwindow_isDragging) {
+                        // 没有拖动，视为点击
+                        if(autoOperation == 3){
+                            // 推送
+                            sendClipboard(getClipboardContent());
+                        } else if(autoOperation == 4) {
+                            // 获取
+                            tryGetPCClipboard();
+                        }
+                    }
+                    floatwindow_isDragging = false; // 重置拖动状态
+                    params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                    windowManager.updateViewLayout(floatWindow, params);
+                    return true;
+            }
+            return false;
+        });
+    }
+    private void removeFloatWindow(){
+        if(floatWindow != null && windowManager != null){
+            windowManager.removeView(floatWindow);
+            floatWindow = null;
+        }
+    }
 
     public void sendClipboard(String text) {
         new Thread(() -> {
@@ -202,6 +332,14 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
     }
 
+    private void tryGetPCClipboard(){
+        if(pcClientList.size()<=0){
+            Toast.makeText(MainActivity.this, "请先置电脑IP和端口", Toast.LENGTH_LONG).show();
+            return;
+        }
+        getPCClipboard(pcClientList.get(selectPC));
+    }
+
     private void getPCClipboard(PCClient pcClient) {
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
@@ -227,7 +365,6 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         });
 
@@ -240,12 +377,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         if (hasFocus) {
-            boolean openAndPush = sp.getBoolean("openAndPush", false);
-            if (openAndPush) {
+            if(autoOperation==1){
+                // openAndPush
                 sendClipboard(getClipboardContent());
-                openAndPushSwitch.setChecked(true);
-            } else {
-                openAndPushSwitch.setChecked(false);
+            }else if(autoOperation == 2){
+                // openAndGet
+                tryGetPCClipboard();
             }
         }
         super.onWindowFocusChanged(hasFocus);
@@ -298,6 +435,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_CODE_DRAW_OVER_OTHER_APPS_WITH_AUTOOPERATION_3) {
+            chooseAutoOperationMode(3);
+        }else if(requestCode == REQUEST_CODE_DRAW_OVER_OTHER_APPS_WITH_AUTOOPERATION_4) {
+            chooseAutoOperationMode(4);
+        }
     }
 
     @Override
@@ -413,5 +556,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         moveTaskToBack(true);
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        removeFloatWindow();
     }
 }
