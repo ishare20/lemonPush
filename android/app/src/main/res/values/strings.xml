@@ -9,4 +9,12 @@
     <string name="divide_action_none">全不选</string>
     <string name="divide_action_translate">百度</string>
     <string name="divide_action_search">Google</string>
+    <string name="auto_operation">自动操作：</string>
+    <string-array name="auto_operation_array">
+        <item>无</item>
+        <item>打开即推送</item>
+        <item>打开即获取</item>
+        <item>悬浮窗点击推送</item>
+        <item>悬浮窗点击获取</item>
+    </string-array>
 </resources>

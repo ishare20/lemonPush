@@ -17,13 +17,25 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:text="设置电脑IP后点这里选择电脑" />
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:gravity="center"
+        android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/auto_operation" />
+            <Button
+                android:id="@+id/auto_operation_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="选择自动操作" />
+        </LinearLayout>
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/open_and_push_switch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
-            android:text="@string/open_and_push" />
 
         <Button
             android:id="@+id/get"
