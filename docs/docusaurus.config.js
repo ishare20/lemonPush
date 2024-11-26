@@ -11,10 +11,10 @@ const config = {
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://sibtools.app',
+  url: 'https://ishare20.net',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/lemon_push',
+  baseUrl: '/sibtools/lemon_push/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -82,7 +82,7 @@ const config = {
           { to: 'docs/download', label: '下载', position: 'left' },
           { to: 'https://github.com/ishare20/lemonPush', label: 'Github', position: 'left' },
           {
-            href: 'https://sibtools.app/',
+            href: 'hhttps://ishare20.net/sibtools/',
             label: '小而美tools',
             position: 'right',
           },
@@ -123,7 +123,7 @@ const config = {
             items: [
               {
                 label: '小而美的工具们',
-                href: 'https://sibtools.app/',
+                href: 'https://ishare20.net/sibtools/',
               },
               {
                 label: '微信订阅号',
